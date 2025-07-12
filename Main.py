@@ -1,6 +1,6 @@
 import sys
 from ParameterConfig import *
-from simulation import Simulation
+from Simulation import Simulation
 from datetime import datetime
 
 if __name__ == "__main__":
@@ -8,7 +8,6 @@ if __name__ == "__main__":
     if len(sys.argv) == 10:
         nrNodes = int(sys.argv[1]) # number of nodes                      
         avgSendTime = int(sys.argv[2]) # average sending interval in milliseconds
-        allocation_type = int(sys.argv[3])
         allocation_method = int(sys.argv[4]) # allocation method for LoRa parameters
         simtime = int(sys.argv[5]) # total running time in milliseconds
         nrBS = int(sys.argv[6]) # number of base stations 1,2,3,4,6,8,24
@@ -22,7 +21,6 @@ if __name__ == "__main__":
         print ("------Use the default config------")
     print ("Nodes per base station:", nrNodes) 
     print ("AvgSendTime (exp. distributed):",avgSendTime)
-    print ("LoRa parameters allocation type: ", allocation_type)
     print ("LoRa parameters allocation method: ", allocation_method)
     print ("Simtime: ", simtime)
     print ("nrBS: ", nrBS)

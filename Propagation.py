@@ -10,16 +10,15 @@ def checkcollision(packet):
     # lost packets don't collide
     if packet.lost: 
        return 0
-    if packetsAtBS[packet.bs]:
-        for other in packetsAtBS[packet.bs]:
-            if other.id != packet.nodeid: # nodes that donnot send this packet
-               # simple collision
-               if frequencyCollision(packet, other.packet[packet.bs]) \
-                   and sfCollision(packet, other.packet[packet.bs]):
+    if NodeInTransmission:
+        for other in NodeInTransmission:
+            if other.ID != packet.SourceID: # nodes that donnot send this packet
+               if frequencyCollision(packet, other.packet) \
+                   and sfCollision(packet, other.packet):
                    if full_collision:
-                       if timingCollision(packet, other.packet[packet.bs]):
+                       if timingCollision(packet, other.packet):
                            # check who collides in the power domain
-                           c = powerCollision(packet, other.packet[packet.bs])
+                           c = powerCollision(packet, other.packet)
                            # mark all the collided packets
                            # either this one, the other one, or both
                            for p in c:
@@ -31,7 +30,7 @@ def checkcollision(packet):
                            pass
                    else:
                        packet.collided = 1
-                       other.packet[packet.bs].collided = 1  # other also got lost, if it wasn't lost already
+                       other.packet.collided = 1  # other also got lost, if it wasn't lost already
                        col = 1
         return col
     return 0

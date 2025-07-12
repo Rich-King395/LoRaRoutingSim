@@ -7,9 +7,8 @@ from ParameterConfig import *
 from Propagation import rssi,snr
 
 class DirectionalPacket:
-    def __init__(self, SourceID, TargetID, PacketPara, distance, bs):
+    def __init__(self, SourceID, TargetID, PacketPara, distance):
         # new: base station ID
-        self.bs = bs
         self.SourceID = SourceID
         self.TargetID = TargetID
         self.seqNr = 0
@@ -22,7 +21,7 @@ class DirectionalPacket:
         self.fre = PacketPara.fre
         self.PS = PacketPara.PayloadSize
 
-        self.lost = True
+        self.lost = False
         # denote if packet is collided
         self.collided = 0
 
@@ -34,9 +33,9 @@ class DirectionalPacket:
         self.RSSI = rssi(distance)
         self.SNR = snr(self.RSSI)
         
-        if self.RSSI > self.minisensi and self.SNR > self.miniSNR:
+        if self.RSSI < self.minisensi or self.SNR < self.miniSNR:
         # if self.RSSI > self.minisensi:
-             self.lost = False
+             self.lost = True
 
     # this function computes the airtime of a packet
     # according to LoraDesignGuide_STD.pdf

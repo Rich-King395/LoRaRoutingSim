@@ -10,7 +10,6 @@ class BroadcastingPacket:
     def __init__(self, SourceID, PacketPara):
         # new: base station ID
         self.SourceID = SourceID
-        self.seqNr = 0
         self.addTime = 0
 
         self.sf = PacketPara.sf
@@ -20,7 +19,7 @@ class BroadcastingPacket:
         self.fre = PacketPara.fre
         self.PS = PacketPara.PayloadSize
 
-        self.lost = True
+        self.lost = False
         # denote if packet is collided
         self.collided = 0
 

@@ -37,21 +37,29 @@ Carrier_Frequency = np.array([867100000,867300000,867500000,867700000,
 Transmission_Power = np.array([2,4,6,8,10,12,14])
 
 # adaptable LoRaWAN parameters to users
-nrNodes = 100
-nrBS = 1
+nrNodes = 50
 radius = 2000
-PayloadSize = 65
-avgSendTime = 5000
-allocation_type = "Local"
+PayloadSize = 20
+avgSendTime = 4000
 allocation_method = "random"
 nrNetworks = 1
 simtime = 3600000 * 24
-directionality = 1
 full_collision = 1
 
+AskJoinTime = 160000
+JoinReqTime = 160000
+JoinConfirmTime = 160000
+
 # global stuff
+GW = None # global variable for the gateway
 nodes = [] # list of nodes
+UnconnectedNodes = [] # list of nodes that are not connected to the AdHocNetwork
+Devices = [] # list of devices, including GW and nodes
 env = simpy.Environment() # simulation environment
+
+JoinAskNodeSet = [] # list of nodes that sent AskJoin packets
+JoinReqNodeSet = [] # list of JoinReq packets sent by nodes
+JoinConfirmNodeSet = [] # list of JoinConfirm packets sent by nodes
 
 # max distance: 300m in city, 3000 m outside (5 km Utz experiment)
 # also more unit-disc like according to Utz
@@ -80,9 +88,10 @@ if (graphics == 1):
     ax = plt.gcf().gca()
 
 # list of base stations
-bs = []
-packetsAtBS = [] # Packets sent to each GW
-packetsRecBS = [] # Packets received by each GW
+NodeInTransmission = [] # list of nodes in transmission at the same time
+packetsRecBS = [] # Packets received by GW
+
+Project_Path = "D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim"
 
 class LoRaParameters:
     sf = 9
