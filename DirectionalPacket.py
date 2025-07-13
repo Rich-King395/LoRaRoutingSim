@@ -18,10 +18,10 @@ class DirectionalPacket:
         self.cr = PacketPara.cr
         self.bw = PacketPara.bw
         self.tp = PacketPara.tp
-        self.fre = PacketPara.fre
+        self.cf = PacketPara.cf
         self.PS = PacketPara.PayloadSize
 
-        self.lost = False
+        self.lost = True
         # denote if packet is collided
         self.collided = 0
 
@@ -30,12 +30,12 @@ class DirectionalPacket:
         self.rectime = DirectionalPacket.airtime(self.sf,self.cr,self.PS,self.bw)
         self.tx_energy = DirectionalPacket.calculate_energy(self.tp,self.rectime)
 
-        self.RSSI = rssi(distance)
+        self.RSSI = rssi(self, distance)
         self.SNR = snr(self.RSSI)
         
-        if self.RSSI < self.minisensi or self.SNR < self.miniSNR:
+        if self.RSSI > self.minisensi and self.SNR > self.miniSNR:
         # if self.RSSI > self.minisensi:
-             self.lost = True
+             self.lost = False
 
     # this function computes the airtime of a packet
     # according to LoraDesignGuide_STD.pdf

@@ -16,7 +16,7 @@ class BroadcastingPacket:
         self.cr = PacketPara.cr
         self.bw = PacketPara.bw
         self.tp = PacketPara.tp
-        self.fre = PacketPara.fre
+        self.cf = PacketPara.cf
         self.PS = PacketPara.PayloadSize
 
         self.lost = False

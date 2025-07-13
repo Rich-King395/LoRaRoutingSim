@@ -38,7 +38,7 @@ Transmission_Power = np.array([2,4,6,8,10,12,14])
 
 # adaptable LoRaWAN parameters to users
 nrNodes = 50
-radius = 2000
+radius = 5000
 PayloadSize = 20
 avgSendTime = 4000
 allocation_method = "random"
@@ -98,7 +98,7 @@ class LoRaParameters:
     cr = 1
     bw = 125
     tp = 14
-    fre = 868000000
+    cf = 868000000
     PayloadSize = PayloadSize
 
         

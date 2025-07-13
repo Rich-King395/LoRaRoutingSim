@@ -1,5 +1,4 @@
 import random
-import os
 import ParameterConfig
 from ParameterConfig import *
 from Propagation import checkcollision, rssi, snr
@@ -18,59 +17,58 @@ def transmit_JoinAsk(env,node):
         # time before sending anything (include prop delay)
         # send up to 2 seconds earlier or later
         # simulate the time interval of discrete events happened in a system
+        # print("Number of nodes", len(ParameterConfig.nodes))
+        
         yield env.timeout(random.expovariate(1.0/float(node.period)))
 
         node.Generate_AskJoin()
-        
+           
         '''Check which node can receive the AskJoin packet.'''
-        for n in nodes:
-            distance = get_distance(node.x, node.y, n) # distance between node and gateway
-            RSSI = rssi(distance) # received signal strength indicator
-            SNR = snr(RSSI) # signal to noise ratio
-            if RSSI < node.packet.minisensi or SNR < node.packet.miniSNR:
-                '''The node cannot receive the packet, it is lost.'''
-                pass
-            else:
-                '''The node can receive the packet, add the source node to the parent set.'''
-                if node.ID == 0 and n.HopCount == 0: # Parent node is the Gateway
-                    n.HopCount = 1
-                    if node not in n.ParentSet:   
-                        n.ParentSet.append(node)
-                        if n in UnconnectedNodes: # if the node is not connected to the network
-                            UnconnectedNodes.remove(n)
-                        if n not in JoinAskNodeSet:
-                            JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet
-                    
-                elif node.ID != 0 and n.HopCount == 0:
-                    n.HopCount = node.HopCount + 1
-                    if node not in n.ParentSet:   
-                        n.ParentSet.append(node)
-                        if n in UnconnectedNodes: # if the node is not connected to the network
-                            UnconnectedNodes.remove(n)
-                        if n not in JoinReqNodeSet: # 1st layer nodes don't need to send JoinReq packets
-                            JoinReqNodeSet.append(n) # add the node to the JoinReqSet
-                        if n not in JoinAskNodeSet:
-                            JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet                
-        
-        if (node in NodeInTransmission):
-            pass
-            # print ("ERROR: packet already in")
-        else:
-            # adding packet if no collision
-            if (checkcollision(node.packet) == 1):
-                node.packet.collided = 1
-            else:
-                node.packet.collided = 0
-            NodeInTransmission.append(node)
-            node.packet.addTime = env.now
-                  
-        # take first packet rectime, stop for rectime        
-        yield env.timeout(node.packet.rectime)
+        #print("Number of nodes", len(ParameterConfig.nodes))
+        for n in ParameterConfig.nodes:
+            if n.ID != node.ID: 
+                distance = get_distance(node.x, node.y, n) # distance between node and gateway
+                # print("distance:",distance)
+                RSSI = rssi(node.packet, distance) # received signal strength indicator
+                SNR = snr(RSSI) # signal to noise ratio
 
-        # complete packet has been received by base station
-        # can remove the node for next transmission                  
-        if (node in NodeInTransmission):
-            NodeInTransmission.remove(node)    
+                if RSSI > node.packet.minisensi and SNR > node.packet.miniSNR:
+                    '''The node can receive the packet, add the source node to the parent set.'''
+                    # print("Node %d received AskJoin packet from Node %d" %(n.ID, node.ID))
+                    if node.ID == 0 and n.HopCount == 0: # Parent node is the Gateway
+                        n.HopCount = 1
+                        if node not in n.ParentSet:   
+                            n.ParentSet.append(node)
+                            if n in ParameterConfig.UnconnectedNodes: # if the node is not connected to the network
+                                ParameterConfig.UnconnectedNodes.remove(n)
+                            if n not in ParameterConfig.JoinAskNodeSet:
+                                ParameterConfig.JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet
+                        
+                    elif node.ID != 0:
+                        if n.HopCount == 0: # child node receive the AskJoin packet from the parent node for the first time
+                            n.HopCount = node.HopCount + 1                             
+                            n.ParentSet.append(node)
+                            
+                            if n in ParameterConfig.UnconnectedNodes: # if the node is not connected to the network
+                                ParameterConfig.UnconnectedNodes.remove(n)
+                            if n not in ParameterConfig.JoinReqNodeSet: # 1st layer nodes don't need to send JoinReq packets
+                                ParameterConfig.JoinReqNodeSet.append(n) # add the node to the JoinReqSet
+                            if n not in ParameterConfig.JoinAskNodeSet:
+                                ParameterConfig.JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet                    
+                        
+                        elif n.HopCount == node.HopCount + 1:
+                            if node not in n.ParentSet:   
+                                n.ParentSet.append(node)
+                                if n in ParameterConfig.UnconnectedNodes: # if the node is not connected to the network
+                                    ParameterConfig.UnconnectedNodes.remove(n)
+                                if n not in ParameterConfig.JoinReqNodeSet: # 1st layer nodes don't need to send JoinReq packets
+                                    ParameterConfig.JoinReqNodeSet.append(n) # add the node to the JoinReqSet
+                                if n not in ParameterConfig.JoinAskNodeSet:
+                                    ParameterConfig.JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet
+                            
+                    
+            # take first packet rectime, stop for rectime        
+            yield env.timeout(node.packet.rectime)
 
 '''
 In JoinReq process, child nodes send directional packets to their potential parent nodes. 
@@ -91,12 +89,13 @@ def transmit_JoinReq(env,node):
             if packet.lost == False:
                 if node not in Devices[packet.TargetID].ChildSet and len(Devices[packet.TargetID].ChildSet) < 8: 
                     Devices[packet.TargetID].ChildSet.append(node) # add the node to the parent node's ChildSet
-                    if Devices[packet.TargetID] not in JoinConfirmNodeSet:
-                        JoinConfirmNodeSet.append(Devices[packet.TargetID])
+                    if Devices[packet.TargetID] not in ParameterConfig.JoinConfirmNodeSet:
+                        ParameterConfig.JoinConfirmNodeSet.append(Devices[packet.TargetID])
             else:
                 continue   
                 
             '''Check collisions for JoinReq packets.'''
+            node.packet = packet # assign the packet to the node's packet
             if (node in NodeInTransmission):
                 pass
                 # print ("ERROR: packet already in")
@@ -133,7 +132,8 @@ def transmit_JoinConfirm(env,node):
         '''Check whether the parent nodes can receive the JoinConfirm packet.'''
         for packet in node.JoinConfirmSet:
             if packet.lost == False:
-               Devices[packet.TargetID].fre = packet.fre # allocate channel to the child node
+               if node in Devices[packet.TargetID].ParentSet: 
+                    Devices[packet.TargetID].ParentFreSet[node.ID] = packet.cf  # allocate channel to the child node
             else:
                 continue   
                 
@@ -171,51 +171,34 @@ def Unconnected_transmit_JoinReq(env,node):
         node.Generate_AskJoin()
         
         '''Check which node can receive the unconnected JoinReq packet.'''
-        for n in nodes:
-            distance = get_distance(node.x, node.y, n) # distance between node and gateway
-            RSSI = rssi(distance) # received signal strength indicator
-            SNR = snr(RSSI) # signal to noise ratio
-            if RSSI < node.packet.minisensi or SNR < node.packet.miniSNR:
-                '''The node cannot receive the packet, it is lost.'''
-                pass
-            else:
-                '''The node can receive the packet, add the source node to the parent set.'''
-                n.sf = node.sf
-                if node.HopCount == 0:
-                    node.HopCount = n.HopCount + 1
+        for n in ParameterConfig.nodes:
+            if n.ID != node.ID: 
+                distance = get_distance(node.x, node.y, n) # distance between node and gateway
+                RSSI = rssi(node.packet, distance) # received signal strength indicator
+                SNR = snr(RSSI) # signal to noise ratio
+                if RSSI < node.packet.minisensi or SNR < node.packet.miniSNR:
+                    '''The node cannot receive the packet, it is lost.'''
+                    pass
                 else:
-                    if n.HopCount+1 < node.HopCount:
+                    '''The node can receive the packet, add the source node to the parent set.'''
+                    n.sf = node.sf
+                    if node.HopCount == 0:
                         node.HopCount = n.HopCount + 1
                     else:
-                        pass
-                    
-                if node not in n.ChildSet and len(n.ChildSet) < 8:
-                    n.ChildSet.append(node) # add the node to the parent node's ChildSet
-                    if node in UnconnectedNodes: # if the node is not connected to the network
-                        UnconnectedNodes.remove(node)
-                    if n not in JoinConfirmNodeSet:
-                        JoinConfirmNodeSet.append(n)    
-                    
+                        if n.HopCount+1 < node.HopCount:
+                            node.HopCount = n.HopCount + 1
+                        else:
+                            pass
                         
-        if (node in NodeInTransmission):
-            pass
-            # print ("ERROR: packet already in")
-        else:
-            # adding packet if no collision
-            if (checkcollision(node.packet) == 1):
-                node.packet.collided = 1
-            else:
-                node.packet.collided = 0
-            NodeInTransmission.append(node)
-            node.packet.addTime = env.now
-                  
-        # take first packet rectime, stop for rectime        
+                    if node not in n.ChildSet and len(n.ChildSet) < 8:
+                        n.ChildSet.append(node) # add the node to the parent node's ChildSet
+                        if node in ParameterConfig.UnconnectedNodes: # if the node is not connected to the network
+                            ParameterConfig.UnconnectedNodes.remove(node)
+                        if n not in ParameterConfig.JoinConfirmNodeSet:
+                            ParameterConfig.JoinConfirmNodeSet.append(n)    
+        
         yield env.timeout(node.packet.rectime)
 
-        # complete packet has been received by base station
-        # can remove the node for next transmission                  
-        if (node in NodeInTransmission):
-            NodeInTransmission.remove(node)
 
 '''
     This function is used to transmit JoinConfirm packets for unconnected nodes.
@@ -233,7 +216,7 @@ def Unconnected_transmit_JoinConfirm(env,node):
         '''Check whether the parent nodes can receive the JoinConfirm packet.'''
         for packet in node.JoinConfirmSet:
             if packet.lost == False:
-               Devices[packet.TargetID].fre = packet.fre # allocate channel to the child node
+               Devices[packet.TargetID].cf = packet.cf # allocate channel to the child node
                if Devices[packet.SouceID] not in node.ParentSet:
                    node.ParentSet.append(Devices[packet.TargetID])   
             else:

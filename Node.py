@@ -18,11 +18,12 @@ class myNode:
         self.y = y
         self.ChildSet = [] # list of child nodes
         self.ParentSet = [] # list of parent nodes
+        self.ParentFreSet = {} # dictionary to store frequencies corresponding to each ParentNode
 
         # LoRa parameters the node used to send packets      
         self.sf = 7
         self.bw = 125
-        self.fre = 868000000
+        self.cf = 868000000
         self.tp = 14
         
         self.JoinReqSet = [] # list of JoinReq packets sent by the node
@@ -31,12 +32,6 @@ class myNode:
         self.dist = None
 
         self.sent = 0
-
-        # graphics for node
-        global graphics
-        if (graphics == 1):
-            global ax
-            ax.add_artist(plt.Circle((self.x, self.y), 4, fill=True, color='blue'))
 
     
     # node generate "virtul" packets for each gateway
@@ -47,11 +42,11 @@ class myNode:
         
         PacketPara = LoRaParameters()
         if allocation_method == "random":
-                PacketPara.sf,PacketPara.bw,PacketPara.fre = random_allocation()
+                PacketPara.sf,PacketPara.bw,PacketPara.cf = random_allocation()
         
         self.sf = PacketPara.sf
         self.bw = PacketPara.bw
-        self.fre = PacketPara.fre 
+        self.cf = PacketPara.cf 
         self.packet = DirectionalPacket(self.id, Target.id, PacketPara, self.dist)
         # print('node %d' %id, "x", self.x, "y", self.y, "dist: ", self.dist, "my BS:", self.bs.id)
 
@@ -62,7 +57,7 @@ class myNode:
         
         PacketPara.sf = self.sf
         PacketPara.bw = self.bw
-        PacketPara.fre = self.fre
+        PacketPara.cf = self.cf
         PacketPara.tp = self.tp
         self.packet = BroadcastingPacket(self.ID, PacketPara)
     
@@ -73,7 +68,7 @@ class myNode:
         
         PacketPara.sf = self.sf
         PacketPara.bw = self.bw
-        PacketPara.fre = self.fre
+        PacketPara.cf = self.cf
         PacketPara.tp = self.tp
         
         for ParentNode in self.ParentSet:
@@ -87,12 +82,12 @@ class myNode:
         
         PacketPara.sf = self.sf
         PacketPara.bw = self.bw
-        PacketPara.fre = self.fre
+        PacketPara.cf = self.cf
         PacketPara.tp = self.tp
         
         for index, ChildNode in enumerate(self.ChildSet):
             self.dist = get_distance(self.x, self.y, ChildNode)
-            PacketPara.fre = Carrier_Frequency[index % len(Carrier_Frequency)]  # Cycle through frequencies
+            PacketPara.cf = Carrier_Frequency[index % len(Carrier_Frequency)]  # Cycle through frequencies
             self.JoinConfirmSet.append(DirectionalPacket(self.ID, ChildNode.ID, PacketPara, self.dist))
     
  

@@ -1,6 +1,6 @@
 import random
 from Propagation import *
-from DirectionalPacket import NodePacket
+from DirectionalPacket import DirectionalPacket
 
 def random_allocation():
     sf = random.randint(7,12)
@@ -17,7 +17,7 @@ def closest_allocation(distance):
     fre = random.choice(Carrier_Frequency)
     for sf in range(7,13):
         for bw in np.array([125,250,500]):
-            if RSSI > myPacket.GetReceiveSensitivity(sf,bw) and SNR > myPacket.GetMiniSNR(sf):
+            if RSSI > DirectionalPacket.GetReceiveSensitivity(sf,bw) and SNR > DirectionalPacket.GetMiniSNR(sf):
                 closest_sf = sf
                 closest_bw = bw
     return closest_sf,closest_bw,fre
