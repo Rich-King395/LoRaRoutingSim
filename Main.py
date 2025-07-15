@@ -2,6 +2,9 @@ import sys
 from ParameterConfig import *
 from AdHocNetwork import Establishment
 from EXP3.Train import EXP3_Run
+from MAB.Train import MAB_Run
+from DLoRa.Train import DLoRa_Run
+
 from random import seed as set_seed
 
 if __name__ == "__main__":
@@ -28,9 +31,15 @@ if __name__ == "__main__":
         print ("radius: ",radius)
         print ("PayloadSize: ",PayloadSize)
 
-        
-        Establishment()
-        
-        set_seed(13)
-        EXP3_Run(nodes)
+        if network_topology == "Mesh": 
+            Establishment()
+            set_seed(13)
+            if allocation_method == "EXP3":
+                EXP3_Run(nodes)
+            elif allocation_method == "MAB":
+                MAB_Run(nodes)
+        elif network_topology == "Star":
+            set_seed(13)
+            if allocation_method == "DLoRa":
+                DLoRa_Run(nodes)
     

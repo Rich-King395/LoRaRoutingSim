@@ -36,15 +36,25 @@ Carrier_Frequency = np.array([867100000,867300000,867500000,867700000,
                        867900000,868100000,868300000,868500000])
 Transmission_Power = np.array([2,4,6,8,10,12,14])
 
+TP_SUM = 2 + 4 + 6 + 8 + 10 + 12 + 14
+
 # adaptable LoRaWAN parameters to users
 nrNodes = 30
 radius = 5000
 PayloadSize = 20
 avgSendTime = 4000
-allocation_method = "random"
 nrNetworks = 1
 simtime = 3600000 * 24
 full_collision = 1
+
+# allocation_method = "random"
+# allocation_method = "EXP3"
+# allocation_method = "MAB"           
+
+allocation_method = "DLoRa"               
+
+# network_topology = "Mesh"
+network_topology = "Star"
 
 AskJoinTime = 160000
 JoinReqTime = 160000
@@ -135,4 +145,38 @@ class EXP3_Config:
     NetEnergyEfficiency = 0
 
     result_folder_path = f"D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim\EXP3\Results"
+    
+class MAB_Config:
+    eposide_duration = 1600000  
+    eval_duration = 12000000
+
+    num_episode = 1000
+        
+    NetworkEnergyEfficiency = []
+    NetworkPDR = []
+
+    NetPDR = 0
+    NetThroughput = 0
+    NetEnergyEfficiency = 0
+
+    result_folder_path = f"D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim\MAB\Results"
+
+class DLoRa_Config:
+    DLoRa_Variant = 2 # 0: epsilon-greedy, 1: decaying-greedy, 2: UCB
+    
+    coef = 2 # coefficient of UCB
+    initialize_flag = 1
+
+    initialize_duration = 12000000
+    eposide_duration = 1800000 
+    eval_duration = 12000000
+
+    num_episode = 4000
+
+    NetPDR = 0
+    NetThroughput = 0
+    NetEnergyEfficiency = 0
+
+    result_folder_path = f"D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim\DLoRa\Results"
+
         

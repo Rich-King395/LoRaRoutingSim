@@ -4,26 +4,26 @@ from ParameterConfig import *
 import ParameterConfig
 from Node import *
 from Gateway import *
-from EXP3.Agent import EXP3Agent
+from MAB.Agent import MABAgent
 import random
 
-def EXP3_Run(nodes):
-    '''Initialize the EXP3 agent for each node'''
+def MAB_Run(nodes):
+    '''Initialize the MAB agent for each node'''
     for node in nodes:
-        node.agent = EXP3Agent(ParentSet = node.ParentSet)
+        node.agent = MABAgent(ParentSet = node.ParentSet)
     
     # set_seed(random_seed)
-    for episode in range(EXP3_Config.num_episode):
-        EXP3_Train(nodes, episode)
+    for episode in range(MAB_Config.num_episode):
+        MAB_Train(nodes, episode)
 
-    # Training_Chart(EXP3_Config)
+    # Training_Chart(MAB_Config)
 
-    # EXP3_Eval(nodes)
+    # MAB_Eval(nodes)
 
-    # Result_Record(EXP3_Config.NetPDR, EXP3_Config.NetEnergyEfficiency)              
+    # Result_Record(MAB_Config.NetPDR, MAB_Config.NetEnergyEfficiency)              
 
 
-def EXP3_Train(nodes, episode):
+def MAB_Train(nodes, episode):
     
     # initialize simulation environment current time for each episode
     env = simpy.Environment()
@@ -40,24 +40,23 @@ def EXP3_Train(nodes, episode):
         ''' Before simulation, initialize each node's transmission process '''
         env.process(transmit_multi_hop_packet(env,node))
 
-    env.run(until=EXP3_Config.eposide_duration)
+    env.run(until=MAB_Config.eposide_duration)
 
 
     for node in nodes:
         node.PDR = float((node.NumReceived)/(node.NumSent))
 
     NetPDR = float(ParameterConfig.NumReceived/ParameterConfig.NumSent) 
-    # NetEnergyEfficiency = float(8*ParameterConfig.RecPacketSize / ParameterConfig.TotalEnergyConsumption)
+    NetEnergyEfficiency = float(8*ParameterConfig.RecPacketSize / ParameterConfig.TotalEnergyConsumption)
 
-    # EXP3_Config.NetworkEnergyEfficiency.append(NetEnergyEfficiency)
-    EXP3_Config.NetworkPDR.append(NetPDR)
+    # MAB_Config.NetworkEnergyEfficiency.append(NetEnergyEfficiency)
+    MAB_Config.NetworkPDR.append(NetPDR)
 
     # print(f"episode={episode} | PDR={NetPDR*100:.2f} | Network EE={NetEnergyEfficiency:.2f}")
-    print(f"episode={episode} | PDR={NetPDR*100:.2f} | Number of packet sent = {ParameterConfig.NumSent} | "
+    print(f"episode={episode} | PDR={NetPDR*100:.2f} | EE = {NetEnergyEfficiency:.2f} | Number of packet sent = {ParameterConfig.NumSent} | "
           f"Number of packet received = {ParameterConfig.NumReceived} | "
           f"Number of path lost packet = {ParameterConfig.NumPathlost} | "
           f"Number of packet collided = {ParameterConfig.NumCollided}")
-
         
 '''
 After the Ad-Hoc network is established, nodes start to transmit packets to the gateway.
@@ -69,7 +68,9 @@ def transmit_multi_hop_packet(env,node):
         # simulate the time interval of discrete events happened in a system
         yield env.timeout(random.expovariate(1.0/float(node.period)))
         
-        EXP3_Generate_Multi_Hop_Packet(node)
+        MAB_Generate_Multi_Hop_Packet(node)
+        
+        ParameterConfig.TotalEnergyConsumption += node.packet.tx_energy
         
         FormerSourceID = node.packet.SourceID
         SourceID = node.packet.SourceID
@@ -98,8 +99,8 @@ def transmit_multi_hop_packet(env,node):
         else: 
             node.agent.reward = 1
         
-        '''Weight update of the EXP3 agent'''
-        node.agent.Probability_Weight_Update()
+        '''Weight update of the MAB agent'''
+        node.agent.Expected_Reward_Update()
         
         # complete packet has been received by base station
         # can remove it for next transmission                  
@@ -113,7 +114,9 @@ def transmit_multi_hop_packet(env,node):
             if node.packet.collided == 0: # Relay node receive the packet
                 SourceID = TargetID
                 if TargetID != 0:
-                    TargetID = EXP3_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
+                    TargetID = MAB_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
+                    
+                    ParameterConfig.TotalEnergyConsumption += Devices[SourceID].RelayPackets[FormerSourceID].tx_energy
                 
             else:
                 pass
@@ -141,8 +144,8 @@ def transmit_multi_hop_packet(env,node):
             else: 
                 Devices[SourceID].agent.reward = 1
             
-            '''Weight update of the EXP3 agent'''
-            Devices[SourceID].agent.Probability_Weight_Update()
+            '''Weight update of the MAB agent'''
+            Devices[SourceID].agent.Expected_Reward_Update()
             
             # complete packet has been received by base station
             # can remove it for next transmission                  
@@ -157,7 +160,10 @@ def transmit_multi_hop_packet(env,node):
                     if TargetID != 0:
                         FormerSourceID = SourceID
                         SourceID = TargetID
-                        TargetID = EXP3_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
+                        TargetID = MAB_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
+                        
+                        ParameterConfig.TotalEnergyConsumption += Devices[SourceID].RelayPackets[FormerSourceID].tx_energy
+                        
                     else:
                         SourceID = 0
                 else:
@@ -174,6 +180,7 @@ def transmit_multi_hop_packet(env,node):
             
         if node.packet.collided == 0 and node.packet.lost == False:
             ParameterConfig.NumReceived += 1
+            ParameterConfig.RecPacketSize += node.packet.PS
             node.NumReceived += 1
         else:
             ParameterConfig.NumLost += 1
@@ -181,11 +188,12 @@ def transmit_multi_hop_packet(env,node):
             
         
 # node generate "virtul" packets for each gateway
-def EXP3_Generate_Multi_Hop_Packet(node):
+def MAB_Generate_Multi_Hop_Packet(node):
     node.packet = None
 
     '''Choose Target node and Transmission Power'''
-    tp, TargetID = node.agent.actions_choose()
+    # tp, TargetID = node.agent.actions_choose()
+    TargetID = node.agent.actions_choose()
     
     node.dist = get_distance(node.x, node.y, Devices[TargetID]) # distance between node and gateway
     
@@ -195,15 +203,16 @@ def EXP3_Generate_Multi_Hop_Packet(node):
     
     PacketPara.cf = node.ParentFreSet.get(TargetID, 868100000)
     # PacketPara.cf = random.choice(Carrier_Frequency)
-    PacketPara.tp = tp 
-    # PacketPara.tp = 14
+    # PacketPara.tp = tp 
+    PacketPara.tp = 14
     node.packet = DirectionalPacket(node.ID, TargetID, PacketPara, node.dist)
     # print('node %d' %id, "x", node.x, "y", node.y, "dist: ", node.dist, "my BS:", node.bs.id)
 
-def EXP3_Generate_Relay_Packet(node, FormerNodeID):
+def MAB_Generate_Relay_Packet(node, FormerNodeID):
     
     '''Choose Target node and Transmission Power'''
-    tp, TargetID = node.agent.actions_choose()
+    # tp, TargetID = node.agent.actions_choose()
+    TargetID = node.agent.actions_choose()
     
     node.dist = get_distance(node.x,node.y,Devices[TargetID]) # distance between node and gateway
     
@@ -212,8 +221,8 @@ def EXP3_Generate_Relay_Packet(node, FormerNodeID):
     PacketPara.sf = node.sf
     PacketPara.cf = node.ParentFreSet.get(TargetID, 868100000)
     # PacketPara.cf = random.choice(Carrier_Frequency)
-    PacketPara.tp = tp
-    # PacketPara.tp = 14 
+    # PacketPara.tp = tp
+    PacketPara.tp = 14 
     
     node.RelayPackets[FormerNodeID] = DirectionalPacket(node.ID, TargetID, PacketPara, node.dist)
 
@@ -246,7 +255,6 @@ def Training_Chart(Method_Config):
 
 
 def reset_simulation_stats():
-    """重置仿真统计量，确保每次动作测试独立"""
     ParameterConfig.NodeInTransmissionToNode = [[] for _ in range(len(Devices))]
     ParameterConfig.NumSent = 0
     ParameterConfig.NumReceived = 0
