@@ -55,6 +55,20 @@ def Establishment():
     # Clear the process after running
     ParameterConfig.env = simpy.Environment() 
     
+    if ParameterConfig.JoinReqNodeSet:
+        for node in ParameterConfig.JoinReqNodeSet:
+            ParameterConfig.env.process(transmit_JoinReq(ParameterConfig.env,node))
+        ParameterConfig.JoinConfirmNodeSet = []   
+        ParameterConfig.env.run(until=JoinReqTime)
+        ParameterConfig.env = simpy.Environment() 
+        
+        '''Node JoinConfirm process'''
+        if ParameterConfig.JoinConfirmNodeSet:
+            for node in ParameterConfig.JoinConfirmNodeSet:
+                ParameterConfig.env.process(transmit_JoinConfirm(ParameterConfig.env,node)) 
+            ParameterConfig.env.run(until=JoinConfirmTime)
+            ParameterConfig.env = simpy.Environment() 
+    
     iteration = 0
     while True:
         print("Size of JoinAskNodeSet:",len(ParameterConfig.JoinAskNodeSet))
@@ -124,9 +138,10 @@ def Establishment():
     
     print("AdHoc Network Established with {} nodes.".format(len(ParameterConfig.nodes)))
     
-    for node in ParameterConfig.nodes:
+    for node in ParameterConfig.Devices:
         parent_ids = [Parent.ID for Parent in node.ParentSet]  # Collect Parent IDs
-        print("Node ID:", node.ID, "Parent IDs:", parent_ids, "Hop Count:", node.HopCount)
+        child_ids = [Child.ID for Child in node.ChildSet]  # Collect Parent IDs
+        print("Node ID:", node.ID, "Parent IDs:", parent_ids, "Child IDs:", child_ids, "Hop Count:", node.HopCount)
     
     #prepare show
     if (graphics == 1):

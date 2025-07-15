@@ -55,7 +55,10 @@ def EXP3_Train(nodes, episode):
     EXP3_Config.NetworkPDR.append(NetPDR)
 
     # print(f"episode={episode} | PDR={NetPDR*100:.2f} | Network EE={NetEnergyEfficiency:.2f}")
-    print(f"episode={episode} | PDR={NetPDR*100:.2f}")
+    print(f"episode={episode} | PDR={NetPDR*100:.2f} | Number of packet sent = {ParameterConfig.NumSent} | "
+          f"Number of packet received = {ParameterConfig.NumReceived} | "
+          f"Number of path lost packet = {ParameterConfig.NumPathlost} | "
+          f"Number of packet collided = {ParameterConfig.NumCollided}")
 
 '''
 After the Ad-Hoc network is established, nodes start to transmit packets to the gateway.
@@ -154,12 +157,18 @@ def transmit_multi_hop_packet(env,node):
         '''Whether the packet is received by the gateway or not'''
         ParameterConfig.NumSent += 1
         node.NumSent += 1
-        if node.packet.collided == 1 or node.packet.lost == True:
-            ParameterConfig.NumLost += 1
-            node.NumLost += 1
-        else:
+        if node.packet.lost == True:
+            ParameterConfig.NumPathlost += 1
+        elif node.packet.collided == 1:
+            ParameterConfig.NumCollided += 1
+            
+        if node.packet.collided == 0 and node.packet.lost == False:
             ParameterConfig.NumReceived += 1
             node.NumReceived += 1
+        else:
+            ParameterConfig.NumLost += 1
+            node.NumLost += 1
+            
         
 # node generate "virtul" packets for each gateway
 def EXP3_Generate_Multi_Hop_Packet(node):
@@ -173,8 +182,11 @@ def EXP3_Generate_Multi_Hop_Packet(node):
     PacketPara = LoRaParameters()
     
     PacketPara.sf = node.sf
+    
     PacketPara.cf = node.ParentFreSet.get(TargetID, 868100000)
-    PacketPara.tp = tp 
+    # PacketPara.cf = random.choice(Carrier_Frequency)
+    # PacketPara.tp = tp 
+    PacketPara.tp = 14
     node.packet = DirectionalPacket(node.ID, TargetID, PacketPara, node.dist)
     # print('node %d' %id, "x", node.x, "y", node.y, "dist: ", node.dist, "my BS:", node.bs.id)
 
@@ -189,7 +201,9 @@ def EXP3_Generate_Relay_Packet(node, FormerNodeID):
 
     PacketPara.sf = node.sf
     PacketPara.cf = node.ParentFreSet.get(TargetID, 868100000)
-    PacketPara.tp = tp 
+    # PacketPara.cf = random.choice(Carrier_Frequency)
+    # PacketPara.tp = tp
+    PacketPara.tp = 14 
     
     node.RelayPackets[FormerNodeID] = DirectionalPacket(node.ID, TargetID, PacketPara, node.dist)
 
@@ -226,6 +240,8 @@ def reset_simulation_stats():
     ParameterConfig.NumSent = 0
     ParameterConfig.NumReceived = 0
     ParameterConfig.NumLost = 0
+    ParameterConfig.NumCollided = 0
+    ParameterConfig.NumPathlost = 0
     ParameterConfig.TotalPacketSize =0 
     ParameterConfig.RecPacketSize = 0 # size of received packets
     ParameterConfig.TotalEnergyConsumption = 0 # total energy consumption of the network

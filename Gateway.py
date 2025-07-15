@@ -3,7 +3,9 @@
 #
 import matplotlib.pyplot as plt
 from ParameterConfig import *
+from DirectionalPacket import DirectionalPacket
 from BroadcastingPacket import BroadcastingPacket
+from Propagation import get_distance
 
 class myBS:
     def __init__(self, id):
@@ -22,7 +24,8 @@ class myBS:
         self.tp = 14
         
         self.ChildSet = []  # list of child nodes
-           
+        self.ParentSet = []
+        
     def Generate_AskJoin(self):
         self.packet = None
         
@@ -32,4 +35,20 @@ class myBS:
         PacketPara.bw = self.bw
         PacketPara.tp = self.tp
         self.packet = BroadcastingPacket(self.ID, PacketPara)
+    
+    def Generate_JoinConfirm(self):
+        self.JoinConfirmSet = []
+        
+        PacketPara = LoRaParameters()
+        
+        PacketPara.sf = self.sf
+        PacketPara.bw = self.bw
+        PacketPara.cf = self.cf
+        PacketPara.tp = self.tp
+        
+        for index, ChildNode in enumerate(self.ChildSet):
+            self.dist = get_distance(self.x, self.y, ChildNode)
+            PacketPara.cf = Carrier_Frequency[index % len(Carrier_Frequency)]  # Cycle through frequencies
+            self.JoinConfirmSet.append(DirectionalPacket(self.ID, ChildNode.ID, PacketPara, self.dist))
+    
         

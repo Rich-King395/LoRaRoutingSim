@@ -7,6 +7,7 @@ from ParameterConfig import *
 from DirectionalPacket import DirectionalPacket
 from BroadcastingPacket import BroadcastingPacket
 from Allocation import *
+from Propagation import *
 
 class myNode:
     def __init__(self, id, x, y, period):
@@ -83,12 +84,4 @@ class myNode:
             PacketPara.cf = Carrier_Frequency[index % len(Carrier_Frequency)]  # Cycle through frequencies
             self.JoinConfirmSet.append(DirectionalPacket(self.ID, ChildNode.ID, PacketPara, self.dist))
     
- 
-#   directional antenna
-#   update RSSI depending on direction
-#
-
-def get_distance(x,y,Target):
-     dist = np.sqrt((x-Target.x)*(x-Target.x)+(y-Target.y)*(y-Target.y)) # distance between node and gateway
-     return dist
 

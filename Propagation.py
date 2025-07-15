@@ -134,3 +134,7 @@ def snr(rss):
     # TODO make a better noise assumption
     noise_floor = -174 + 10 * np.log10(125e3)
     return rss - noise_floor
+
+def get_distance(x,y,Target):
+     dist = np.sqrt((x-Target.x)*(x-Target.x)+(y-Target.y)*(y-Target.y)) # distance between node and gateway
+     return dist

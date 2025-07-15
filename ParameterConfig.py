@@ -38,7 +38,7 @@ Transmission_Power = np.array([2,4,6,8,10,12,14])
 
 # adaptable LoRaWAN parameters to users
 nrNodes = 30
-radius = 1000
+radius = 5000
 PayloadSize = 20
 avgSendTime = 4000
 allocation_method = "random"
@@ -67,6 +67,9 @@ JoinConfirmNodeSet = [] # list of JoinConfirm packets sent by nodes
 NumSent = 0
 NumReceived = 0
 NumLost = 0
+
+NumCollided = 0
+NumPathlost = 0
 
 TotalPacketSize =0 
 RecPacketSize = 0 # size of received packets
@@ -117,7 +120,7 @@ class LoRaParameters:
     PayloadSize = PayloadSize
 
 class EXP3_Config:
-    eposide_duration = 1800000  
+    eposide_duration = 1600000  
     eval_duration = 12000000
 
     num_episode = 4000

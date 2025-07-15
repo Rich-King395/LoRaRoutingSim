@@ -41,6 +41,8 @@ def transmit_JoinAsk(env,node):
                             n.ParentSet.append(node)
                             if n in ParameterConfig.UnconnectedNodes: # if the node is not connected to the network
                                 ParameterConfig.UnconnectedNodes.remove(n)
+                            if n not in ParameterConfig.JoinReqNodeSet: # 1st layer nodes don't need to send JoinReq packets
+                                    ParameterConfig.JoinReqNodeSet.append(n) # add the node to the JoinReqSet
                             if n not in ParameterConfig.JoinAskNodeSet:
                                 ParameterConfig.JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet
                         
@@ -88,7 +90,8 @@ def transmit_JoinReq(env,node):
         '''Check whether the parent nodes can receive the JoinReq packet.'''
         for packet in node.JoinReqSet:
             if packet.lost == False:
-                if node not in Devices[packet.TargetID].ChildSet and len(Devices[packet.TargetID].ChildSet) < 8: 
+                
+                if node not in Devices[packet.TargetID].ChildSet: 
                     Devices[packet.TargetID].ChildSet.append(node) # add the node to the parent node's ChildSet
                     if Devices[packet.TargetID] not in ParameterConfig.JoinConfirmNodeSet:
                         ParameterConfig.JoinConfirmNodeSet.append(Devices[packet.TargetID])
