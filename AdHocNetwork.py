@@ -175,6 +175,8 @@ def Establishment():
         plt.pause(0.001)  # Add a short pause to allow the plot to update
 
         plt.show(block=True)  # Keep the plot window open until it is closed by the user
+        
+    ParameterConfig.Routing_Flag = 1
 
 
             

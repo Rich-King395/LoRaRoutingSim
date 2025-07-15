@@ -27,8 +27,6 @@ def EXP3_Train(nodes, episode):
     
     # initialize simulation environment current time for each episode
     env = simpy.Environment()
-    
-    ParameterConfig.NodeInTransmissionToNode = [[] for _ in range(len(Devices))]
 
     ''' initialize the environment at the beginning of episode '''
     reset_simulation_stats()
@@ -60,6 +58,7 @@ def EXP3_Train(nodes, episode):
           f"Number of path lost packet = {ParameterConfig.NumPathlost} | "
           f"Number of packet collided = {ParameterConfig.NumCollided}")
 
+        
 '''
 After the Ad-Hoc network is established, nodes start to transmit packets to the gateway.
 '''
@@ -79,7 +78,7 @@ def transmit_multi_hop_packet(env,node):
         ParameterConfig.PacketIndex += 1
         
         '''Check collisions with the packets having the same target node'''
-        if node in ParameterConfig.NodeInTransmissionToNode[node.packet.TargetID]:
+        if node.ID in ParameterConfig.NodeInTransmissionToNode[node.packet.TargetID]:
             pass
         else:
             # adding packet if no collision
@@ -87,19 +86,19 @@ def transmit_multi_hop_packet(env,node):
                 node.packet.collided = 1
             else:
                 node.packet.collided = 0
-            ParameterConfig.NodeInTransmissionToNode[node.packet.TargetID].append(node)
+            ParameterConfig.NodeInTransmissionToNode[node.packet.TargetID].append(node.ID)
             node.packet.addTime = env.now
             node.packet.Index = ParameterConfig.PacketIndex
         
         yield env.timeout(node.packet.rectime)
         
         '''Weight update of the EXP3 agent'''
-        node.agent.Probability_Weight_Update()
+        # node.agent.Probability_Weight_Update()
         
         # complete packet has been received by base station
         # can remove it for next transmission                  
-        if node in ParameterConfig.NodeInTransmissionToNode[node.packet.TargetID]:
-            ParameterConfig.NodeInTransmissionToNode[node.packet.TargetID].remove(node)
+        if node.ID in ParameterConfig.NodeInTransmissionToNode[TargetID]:
+            ParameterConfig.NodeInTransmissionToNode[TargetID].remove(node.ID)
         
         '''Whether the packet is lost or not'''
         if node.packet.lost:
@@ -108,7 +107,7 @@ def transmit_multi_hop_packet(env,node):
             if node.packet.collided == 0: # Relay node receive the packet
                 SourceID = TargetID
                 if TargetID != 0:
-                    TargetID = EXP3_Generate_Relay_Packet(Devices[TargetID], FormerSourceID)
+                    TargetID = EXP3_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
                 
             else:
                 pass
@@ -116,7 +115,7 @@ def transmit_multi_hop_packet(env,node):
         
         while SourceID != 0 and node.packet.collided == 0 and node.packet.lost == False:
             '''Check collisions with the packets having the same target node'''
-            if Devices[SourceID] in ParameterConfig.NodeInTransmissionToNode[Devices[SourceID].RelayPackets[FormerSourceID].TargetID]:
+            if SourceID in ParameterConfig.NodeInTransmissionToNode[TargetID]:
                 pass
             else:
                 # adding packet if no collision
@@ -125,7 +124,8 @@ def transmit_multi_hop_packet(env,node):
                 else:
                     Devices[SourceID].RelayPackets[FormerSourceID].collided = 0
 
-                ParameterConfig.NodeInTransmissionToNode[Devices[SourceID].RelayPackets[FormerSourceID].TargetID].append(node)
+                ParameterConfig.NodeInTransmissionToNode[TargetID].append(SourceID)
+                
                 Devices[SourceID].RelayPackets[FormerSourceID].addTime = env.now
             
             yield env.timeout(node.packet.rectime)
@@ -136,8 +136,8 @@ def transmit_multi_hop_packet(env,node):
             
             # complete packet has been received by base station
             # can remove it for next transmission                  
-            if Devices[SourceID] in ParameterConfig.NodeInTransmissionToNode[Devices[SourceID].RelayPackets[FormerSourceID].TargetID]:
-                ParameterConfig.NodeInTransmissionToNode[Devices[SourceID].RelayPackets[FormerSourceID].TargetID].remove(Devices[SourceID])
+            if SourceID in ParameterConfig.NodeInTransmissionToNode[TargetID]:
+                ParameterConfig.NodeInTransmissionToNode[TargetID].remove(SourceID)
                       
             '''Whether the packet is lost or not'''
             if  Devices[SourceID].RelayPackets[FormerSourceID].lost:
@@ -147,7 +147,7 @@ def transmit_multi_hop_packet(env,node):
                     if TargetID != 0:
                         FormerSourceID = SourceID
                         SourceID = TargetID
-                        TargetID = EXP3_Generate_Relay_Packet(Devices[TargetID], FormerSourceID)
+                        TargetID = EXP3_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
                     else:
                         SourceID = 0
                 else:
@@ -185,8 +185,8 @@ def EXP3_Generate_Multi_Hop_Packet(node):
     
     PacketPara.cf = node.ParentFreSet.get(TargetID, 868100000)
     # PacketPara.cf = random.choice(Carrier_Frequency)
-    # PacketPara.tp = tp 
-    PacketPara.tp = 14
+    PacketPara.tp = tp 
+    # PacketPara.tp = 14
     node.packet = DirectionalPacket(node.ID, TargetID, PacketPara, node.dist)
     # print('node %d' %id, "x", node.x, "y", node.y, "dist: ", node.dist, "my BS:", node.bs.id)
 
@@ -202,8 +202,8 @@ def EXP3_Generate_Relay_Packet(node, FormerNodeID):
     PacketPara.sf = node.sf
     PacketPara.cf = node.ParentFreSet.get(TargetID, 868100000)
     # PacketPara.cf = random.choice(Carrier_Frequency)
-    # PacketPara.tp = tp
-    PacketPara.tp = 14 
+    PacketPara.tp = tp
+    # PacketPara.tp = 14 
     
     node.RelayPackets[FormerNodeID] = DirectionalPacket(node.ID, TargetID, PacketPara, node.dist)
 
@@ -237,6 +237,7 @@ def Training_Chart(Method_Config):
 
 def reset_simulation_stats():
     """重置仿真统计量，确保每次动作测试独立"""
+    ParameterConfig.NodeInTransmissionToNode = [[] for _ in range(len(Devices))]
     ParameterConfig.NumSent = 0
     ParameterConfig.NumReceived = 0
     ParameterConfig.NumLost = 0

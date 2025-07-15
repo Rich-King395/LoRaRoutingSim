@@ -43,14 +43,14 @@ def multihop_checkcollision(packet):
     if packet.lost: 
        return 0
     if ParameterConfig.NodeInTransmissionToNode[packet.TargetID]:
-        for other in ParameterConfig.NodeInTransmissionToNode[packet.TargetID]:
-            if other.ID != packet.SourceID: # nodes that donnot send this packet
-               if frequencyCollision(packet, other.packet) \
-                   and sfCollision(packet, other.packet):
+        for OtherSourceID in ParameterConfig.NodeInTransmissionToNode[packet.TargetID]:
+            if OtherSourceID != packet.SourceID: # nodes that donnot send this packet
+               if frequencyCollision(packet, Devices[OtherSourceID].packet) \
+                   and sfCollision(packet, Devices[OtherSourceID].packet):
                    if full_collision:
-                       if timingCollision(packet, other.packet):
+                       if timingCollision(packet, Devices[OtherSourceID].packet):
                            # check who collides in the power domain
-                           c = powerCollision(packet, other.packet)
+                           c = powerCollision(packet, Devices[OtherSourceID].packet)
                            # mark all the collided packets
                            # either this one, the other one, or both
                            for p in c:
@@ -62,7 +62,7 @@ def multihop_checkcollision(packet):
                            pass
                    else:
                        packet.collided = 1
-                       other.packet.collided = 1  # other also got lost, if it wasn't lost already
+                       Devices[OtherSourceID].packet.collided = 1  # other also got lost, if it wasn't lost already
                        col = 1
         return col
     return 0
@@ -124,8 +124,10 @@ def timingCollision(p1, p2):
     return False
 
 def rssi(packet,distance):
-    Lpl = Lpld0+10*gamma*math.log10(distance/d0)
-    # Lpl = Lpld0+10*gamma*math.log10(distance/d0) + np.random.normal(0,std)
+    if ParameterConfig.Routing_Flag == 0:
+        Lpl = Lpld0+10*gamma*math.log10(distance/d0)
+    else:
+        Lpl = Lpld0+10*gamma*math.log10(distance/d0) + np.random.normal(0,std)
 
     Prx = packet.tp + GL - Lpl
     return Prx

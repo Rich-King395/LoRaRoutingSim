@@ -4,9 +4,9 @@ import numpy as np
 import itertools
 class EXP3Agent:
     def __init__(self, ParentSet):
-        Parent_Ids = [Parent.ID for Parent in ParentSet]
+        self.Parent_Ids = [Parent.ID for Parent in ParentSet]
         
-        self.arms = list(itertools.product(Transmission_Power, Parent_Ids))
+        self.arms = list(itertools.product(Transmission_Power, self.Parent_Ids))
         
 
         # number of actions

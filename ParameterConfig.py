@@ -50,6 +50,8 @@ AskJoinTime = 160000
 JoinReqTime = 160000
 JoinConfirmTime = 160000
 
+Routing_Flag = 0
+
 # global stuff
 GW = None # global variable for the gateway
 nodes = [] # list of nodes
@@ -123,7 +125,7 @@ class EXP3_Config:
     eposide_duration = 1600000  
     eval_duration = 12000000
 
-    num_episode = 4000
+    num_episode = 100
         
     NetworkEnergyEfficiency = []
     NetworkPDR = []
