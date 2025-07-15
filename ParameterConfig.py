@@ -37,8 +37,8 @@ Carrier_Frequency = np.array([867100000,867300000,867500000,867700000,
 Transmission_Power = np.array([2,4,6,8,10,12,14])
 
 # adaptable LoRaWAN parameters to users
-nrNodes = 50
-radius = 5000
+nrNodes = 30
+radius = 1000
 PayloadSize = 20
 avgSendTime = 4000
 allocation_method = "random"
@@ -64,6 +64,15 @@ JoinConfirmNodeSet = [] # list of JoinConfirm packets sent by nodes
 # max distance: 300m in city, 3000 m outside (5 km Utz experiment)
 # also more unit-disc like according to Utz
 
+NumSent = 0
+NumReceived = 0
+NumLost = 0
+
+TotalPacketSize =0 
+RecPacketSize = 0 # size of received packets
+TotalEnergyConsumption = 0 # total energy consumption of the network
+TotalPacketAirtime  = 0 # total airtime of packets in the network
+
 # list of received packets
 recPackets=[]
 # list of collided packets
@@ -71,8 +80,8 @@ collidedPackets=[]
 # list of lost packets
 lostPackets = []
 
-# global value of packet sequence numbers
-packetSeq = 0
+# global value of packet index numbers
+PacketIndex = 0
 
 Ptx = 14 # packet transmission power
 gamma = 2.32
@@ -87,8 +96,14 @@ if (graphics == 1):
     plt.figure()
     ax = plt.gcf().gca()
 
+link_line = 1
+
+
 # list of base stations
 NodeInTransmission = [] # list of nodes in transmission at the same time
+
+NodeInTransmissionToNode = []
+
 packetsRecBS = [] # Packets received by GW
 
 Project_Path = "D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim"
@@ -101,4 +116,18 @@ class LoRaParameters:
     cf = 868000000
     PayloadSize = PayloadSize
 
+class EXP3_Config:
+    eposide_duration = 1800000  
+    eval_duration = 12000000
+
+    num_episode = 4000
+        
+    NetworkEnergyEfficiency = []
+    NetworkPDR = []
+
+    NetPDR = 0
+    NetThroughput = 0
+    NetEnergyEfficiency = 0
+
+    result_folder_path = f"D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim\EXP3\Results"
         

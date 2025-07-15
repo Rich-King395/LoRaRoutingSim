@@ -2,6 +2,7 @@
 # Note: called before a packet (or rather node) is inserted into the list
 import math
 from ParameterConfig import *
+import ParameterConfig
 
 # check for collisions at base station
 # Note: called before a packet (or rather node) is inserted into the list
@@ -34,6 +35,38 @@ def checkcollision(packet):
                        col = 1
         return col
     return 0
+
+
+def multihop_checkcollision(packet):
+    col = 0 # flag needed since there might be several collisions for packet
+    # lost packets don't collide
+    if packet.lost: 
+       return 0
+    if ParameterConfig.NodeInTransmissionToNode[packet.TargetID]:
+        for other in ParameterConfig.NodeInTransmissionToNode[packet.TargetID]:
+            if other.ID != packet.SourceID: # nodes that donnot send this packet
+               if frequencyCollision(packet, other.packet) \
+                   and sfCollision(packet, other.packet):
+                   if full_collision:
+                       if timingCollision(packet, other.packet):
+                           # check who collides in the power domain
+                           c = powerCollision(packet, other.packet)
+                           # mark all the collided packets
+                           # either this one, the other one, or both
+                           for p in c:
+                               p.collided = 1
+                               if p == packet:
+                                   col = 1
+                       else:
+                           # no timing collision, all fine
+                           pass
+                   else:
+                       packet.collided = 1
+                       other.packet.collided = 1  # other also got lost, if it wasn't lost already
+                       col = 1
+        return col
+    return 0
+
 
 # 
 # frequencyCollision, conditions

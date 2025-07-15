@@ -45,16 +45,17 @@ def transmit_JoinAsk(env,node):
                                 ParameterConfig.JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet
                         
                     elif node.ID != 0:
-                        if n.HopCount == 0: # child node receive the AskJoin packet from the parent node for the first time
-                            n.HopCount = node.HopCount + 1                             
-                            n.ParentSet.append(node)
-                            
-                            if n in ParameterConfig.UnconnectedNodes: # if the node is not connected to the network
-                                ParameterConfig.UnconnectedNodes.remove(n)
-                            if n not in ParameterConfig.JoinReqNodeSet: # 1st layer nodes don't need to send JoinReq packets
-                                ParameterConfig.JoinReqNodeSet.append(n) # add the node to the JoinReqSet
-                            if n not in ParameterConfig.JoinAskNodeSet:
-                                ParameterConfig.JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet                    
+                        if n.HopCount == 0: # child node receive the AskJoin packet from the parent node for the
+                            n.HopCount = node.HopCount + 1   
+                            if node not in n.ParentSet:                           
+                                n.ParentSet.append(node)
+                                
+                                if n in ParameterConfig.UnconnectedNodes: # if the node is not connected to the network
+                                    ParameterConfig.UnconnectedNodes.remove(n)
+                                if n not in ParameterConfig.JoinReqNodeSet: # 1st layer nodes don't need to send JoinReq packets
+                                    ParameterConfig.JoinReqNodeSet.append(n) # add the node to the JoinReqSet
+                                if n not in ParameterConfig.JoinAskNodeSet:
+                                    ParameterConfig.JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet                    
                         
                         elif n.HopCount == node.HopCount + 1:
                             if node not in n.ParentSet:   
@@ -217,8 +218,8 @@ def Unconnected_transmit_JoinConfirm(env,node):
         for packet in node.JoinConfirmSet:
             if packet.lost == False:
                Devices[packet.TargetID].cf = packet.cf # allocate channel to the child node
-               if Devices[packet.SouceID] not in node.ParentSet:
-                   node.ParentSet.append(Devices[packet.TargetID])   
+               if Devices[packet.SourceID] not in node.ParentSet:
+                   node.ParentSet.append(Devices[packet.SourceID])   
             else:
                 continue   
                 
@@ -243,69 +244,5 @@ def Unconnected_transmit_JoinConfirm(env,node):
                 NodeInTransmission.remove(node)
     
 
-
-'''
-After the Ad-Hoc network is established, nodes start to transmit packets to the gateway.
-'''
-def transmit_packet(self,env,node):
-    while True:
-        # time before sending anything (include prop delay)
-        # send up to 2 seconds earlier or later
-        # simulate the time interval of discrete events happened in a system
-        yield env.timeout(random.expovariate(1.0/float(node.period)))
-
-        # time sending and receiving
-        # packet arrives -> add to base station
-        node.sent = node.sent + 1 # number of packets sent by the node       
-        global packetSeq
-        packetSeq += 1 # total number of packet of the network
-
-        node.Generate_Packet()
-
-        if (node in NodeInTransmission):
-                print ("ERROR: packet already in")
-        else:
-                # adding packet if no collision
-                if (checkcollision(node.packet)==1):
-                    node.packet.collided = 1
-                else:
-                    node.packet.collided = 0
-                NodeInTransmission.append(node)
-                node.packet.addTime = env.now
-                node.packet.seqNr = packetSeq
-        self.TotalPacketSize += node.packet.PS
-        self.TotalEnergyConsumption += float(node.packet.tx_energy / 1000)
-        self.TotalPacketAirtime += float(node.packet.rectime / 1000)            
-            
-        # take first packet rectime, stop for rectime        
-        yield env.timeout(node.packet[0].rectime)
-
-        # if packet did not collide, add it in list of received packets
-        # unless it is already in
-
-        if node.packet.lost:
-            lostPackets.append(node.packet.seqNr)
-        else:
-            if node.packet.collided == 0:               
-                packetsRecBS.append(node.packet.seqNr)
-
-                # recPackets is a global list of received packets
-                # not updated for multiple networks        
-                if (recPackets):
-                    if (recPackets[-1] != node.packet.seqNr):
-                        recPackets.append(node.packet.seqNr)
-                        self.RecPacketSize += node.packet.PS
-                else:
-                    recPackets.append(node.packet.seqNr)
-                    self.RecPacketSize += node.packet.PS
-            else:
-                # XXX only for debugging
-                collidedPackets.append(node.packet.seqNr)
-
-        # complete packet has been received by base station
-        # can remove it for next transmission
-                        
-        if (node in NodeInTransmission):
-            NodeInTransmission.remove(node)
 
             

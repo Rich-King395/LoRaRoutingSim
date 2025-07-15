@@ -21,6 +21,8 @@ class DirectionalPacket:
         self.cf = PacketPara.cf
         self.PS = PacketPara.PayloadSize
 
+        self.Index = None
+        
         self.lost = True
         # denote if packet is collided
         self.collided = 0

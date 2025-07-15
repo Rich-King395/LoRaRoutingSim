@@ -1,7 +1,8 @@
 import sys
 from ParameterConfig import *
 from AdHocNetwork import Establishment
-
+from EXP3.Train import EXP3_Run
+from random import seed as set_seed
 
 if __name__ == "__main__":
     # get arguments
@@ -18,16 +19,18 @@ if __name__ == "__main__":
         PayloadSize = int(sys.argv[11]) # payloadsize of packet
     else:
         print ("------Use the default config------")
-    print ("Nodes per base station:", nrNodes) 
-    print ("AvgSendTime (exp. distributed):",avgSendTime)
-    print ("LoRa parameters allocation method: ", allocation_method)
-    print ("Simtime: ", simtime)
-    print ("Full Collision: ", full_collision)
-    print ("nrNetworks: ", nrNetworks)
-    print ("radius: ",radius)
-    print ("PayloadSize: ",PayloadSize)
+        print ("Nodes per base station:", nrNodes) 
+        print ("AvgSendTime (exp. distributed):",avgSendTime)
+        print ("LoRa parameters allocation method: ", allocation_method)
+        print ("Simtime: ", simtime)
+        print ("Full Collision: ", full_collision)
+        print ("nrNetworks: ", nrNetworks)
+        print ("radius: ",radius)
+        print ("PayloadSize: ",PayloadSize)
 
-    
-    Establishment()
-    
+        
+        Establishment()
+        
+        set_seed(13)
+        EXP3_Run(nodes)
     

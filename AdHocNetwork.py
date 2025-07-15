@@ -132,9 +132,23 @@ def Establishment():
     if (graphics == 1):
         # graphics for node
         for node in ParameterConfig.nodes:
-            ax.add_artist(plt.Circle((node.x, node.y), 40, fill=True, color='blue'))
+            if node.HopCount == 1:
+                color = 'red'
+            elif node.HopCount == 2:
+                color = 'green'
+            elif node.HopCount == 3:
+                color = 'blue'
+            else:
+                color = 'gray'  # Default color for other hop counts
+            
+            ax.add_artist(plt.Circle((node.x, node.y), 40, fill=True, color=color))
             ax.text(node.x + 5, node.y + 5, str(node.ID), fontsize=9, ha='left', va='bottom')  # Add node ID above the node
-        
+            
+            if link_line:
+                # Draw dashed lines to parent nodes
+                for parent in node.ParentSet:
+                    ax.plot([node.x, parent.x], [node.y, parent.y], 'k--', linewidth=1)  # Dashed line to parent
+
         # graphics for base station
         ax.scatter(ParameterConfig.GW.x, ParameterConfig.GW.y,
                    marker='^', color='red', s=100, zorder=10, label="Gateway")
@@ -145,9 +159,8 @@ def Establishment():
         plt.draw()
         plt.pause(0.001)  # Add a short pause to allow the plot to update
 
-        plt.show(block=True)  # Keep the plot window open
-        plt.close()  
-        exit()  
+        plt.show(block=True)  # Keep the plot window open until it is closed by the user
+
 
             
 
