@@ -4,29 +4,29 @@ from ParameterConfig import *
 import ParameterConfig
 from Node import *
 from Gateway import *
-from MAB.Agent import MABAgent
+from DLoRaMesh.Agent import DLoRaMeshAgent
 from Plot.TopologyGraphics import Topology_Graphics
 import random
 
-def MAB_Run(nodes):
-    '''Initialize the MAB agent for each node'''
+def DLoRaMesh_Run(nodes):
+    '''Initialize the DLoRaMesh agent for each node'''
     for node in nodes:
-        node.agent = MABAgent(ParentSet = node.ParentSet)
+        node.agent = DLoRaMeshAgent(ParentSet = node.ParentSet)
     
     # set_seed(random_seed)
-    for episode in range(MAB_Config.num_episode):
-        MAB_Train(nodes, episode)
+    for episode in range(DLoRaMesh_Config.num_episode):
+        DLoRaMesh_Train(nodes, episode)
 
-    # Training_Chart(MAB_Config)
+    # Training_Chart(DLoRaMesh_Config)
 
-    # MAB_Eval(nodes)
+    # DLoRaMesh_Eval(nodes)
     
     Topology_Graphics(nodes)
 
-    # Result_Record(MAB_Config.NetPDR, MAB_Config.NetEnergyEfficiency)              
+    # Result_Record(DLoRaMesh_Config.NetPDR, DLoRaMesh_Config.NetEnergyEfficiency)              
 
 
-def MAB_Train(nodes, episode):
+def DLoRaMesh_Train(nodes, episode):
     
     # initialize simulation environment current time for each episode
     env = simpy.Environment()
@@ -43,7 +43,7 @@ def MAB_Train(nodes, episode):
         ''' Before simulation, initialize each node's transmission process '''
         env.process(transmit_multi_hop_packet(env,node))
 
-    env.run(until=MAB_Config.eposide_duration)
+    env.run(until=DLoRaMesh_Config.eposide_duration)
 
 
     for node in nodes:
@@ -52,8 +52,8 @@ def MAB_Train(nodes, episode):
     NetPDR = float(ParameterConfig.NumReceived/ParameterConfig.NumSent) 
     NetEnergyEfficiency = float(8*ParameterConfig.RecPacketSize / ParameterConfig.TotalEnergyConsumption)
 
-    MAB_Config.NetworkEnergyEfficiency.append(NetEnergyEfficiency)
-    MAB_Config.NetworkPDR.append(NetPDR)
+    DLoRaMesh_Config.NetworkEnergyEfficiency.append(NetEnergyEfficiency)
+    DLoRaMesh_Config.NetworkPDR.append(NetPDR)
 
     # print(f"episode={episode} | PDR={NetPDR*100:.2f} | Network EE={NetEnergyEfficiency:.2f}")
     print(f"episode={episode} | PDR={NetPDR*100:.2f} | EE = {NetEnergyEfficiency:.2f} | Number of packet sent = {ParameterConfig.NumSent} | "
@@ -71,7 +71,7 @@ def transmit_multi_hop_packet(env,node):
         # simulate the time interval of discrete events happened in a system
         yield env.timeout(random.expovariate(1.0/float(node.period)))
         
-        MAB_Generate_Multi_Hop_Packet(node)
+        DLoRaMesh_Generate_Multi_Hop_Packet(node)
         
         ParameterConfig.TotalEnergyConsumption += node.packet.tx_energy
         
@@ -98,11 +98,11 @@ def transmit_multi_hop_packet(env,node):
         
         '''Agent observe reward'''
         if node.packet.lost == True or node.packet.collided == 1: 
-            node.agent.reward = 0
+            node.agent.rewards = [-1,-1,-1] 
         else: 
-            node.agent.reward = 1
+            node.agent.rewards = [1,1,1] 
         
-        '''Weight update of the MAB agent'''
+        '''Weight update of the DLoRaMesh agent'''
         node.agent.Expected_Reward_Update()
         
         # complete packet has been received by base station
@@ -117,7 +117,7 @@ def transmit_multi_hop_packet(env,node):
             if node.packet.collided == 0: # Relay node receive the packet
                 SourceID = TargetID
                 if TargetID != 0:
-                    TargetID = MAB_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
+                    TargetID = DLoRaMesh_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
                     
                     ParameterConfig.TotalEnergyConsumption += Devices[SourceID].RelayPackets[FormerSourceID].tx_energy
                 
@@ -143,11 +143,11 @@ def transmit_multi_hop_packet(env,node):
             
             '''Agent observe reward'''
             if Devices[SourceID].RelayPackets[FormerSourceID].lost == True or Devices[SourceID].RelayPackets[FormerSourceID].collided == 1: 
-                Devices[SourceID].agent.reward = 0
+                Devices[SourceID].agent.rewards = [-1,-1,-1] 
             else: 
-                Devices[SourceID].agent.reward = 1
+                Devices[SourceID].agent.rewards = [1,1,1] 
             
-            '''Weight update of the MAB agent'''
+            '''Weight update of the DLoRaMesh agent'''
             Devices[SourceID].agent.Expected_Reward_Update()
             
             # complete packet has been received by base station
@@ -163,7 +163,7 @@ def transmit_multi_hop_packet(env,node):
                     if TargetID != 0:
                         FormerSourceID = SourceID
                         SourceID = TargetID
-                        TargetID = MAB_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
+                        TargetID = DLoRaMesh_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
                         
                         ParameterConfig.TotalEnergyConsumption += Devices[SourceID].RelayPackets[FormerSourceID].tx_energy
                         
@@ -191,7 +191,7 @@ def transmit_multi_hop_packet(env,node):
             
         
 # node generate "virtul" packets for each gateway
-def MAB_Generate_Multi_Hop_Packet(node):
+def DLoRaMesh_Generate_Multi_Hop_Packet(node):
     node.packet = None
 
     '''Choose Target node and Transmission Power'''
@@ -211,7 +211,7 @@ def MAB_Generate_Multi_Hop_Packet(node):
     node.packet = DirectionalPacket(node.ID, TargetID, PacketPara, dist)
     # print('node %d' %id, "x", node.x, "y", node.y, "dist: ", node.dist, "my BS:", node.bs.id)
 
-def MAB_Generate_Relay_Packet(node, FormerNodeID):
+def DLoRaMesh_Generate_Relay_Packet(node, FormerNodeID):
     
     '''Choose Target node and Transmission Power'''
     # tp, TargetID = node.agent.actions_choose()

@@ -39,9 +39,10 @@ Carrier_Frequency = np.array([867100000,867300000,867500000,867700000,
 Transmission_Power = np.array([2,4,6,8,10,12,14])
 
 TP_SUM = 2 + 4 + 6 + 8 + 10 + 12 + 14
+SF_SUM = float(7/(2^7)+8/(2^8)+9/(2^9)+10/(2^10)+11/(2^11)+12/(2^12))
 
 # adaptable LoRaWAN parameters to users
-nrNodes = 30
+nrNodes = 100
 radius = 5000
 PayloadSize = 20
 avgSendTime = 4000
@@ -51,11 +52,12 @@ full_collision = 1
 
 # allocation_method = "Random"
 # allocation_method = "EXP3"
-allocation_method = "MAB"           
-#allocation_method = "DLoRa"               
+allocation_method = "DLoRaMesh"           
+
+# allocation_method = "DLoRa"               
 
 network_topology = "Mesh"
-#network_topology = "Star"
+# network_topology = "Star"
 
 AskJoinTime = 160000
 JoinReqTime = 160000
@@ -147,7 +149,7 @@ class EXP3_Config:
 
     result_folder_path = f"D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim\EXP3\Results"
     
-class MAB_Config:
+class DLoRaMesh_Config:
     eposide_duration = 1600000  
     eval_duration = 12000000
 
