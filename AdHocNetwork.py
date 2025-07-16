@@ -5,7 +5,7 @@ from ParameterConfig import *
 from Gateway import myBS
 from Node import myNode
 from TransmissionProcess import *
-
+from Plot.TopologyGraphics import Mesh_Topology
 
 def Establishment():
     # generate BS
@@ -144,38 +144,8 @@ def Establishment():
         print("Node ID:", node.ID, "Parent IDs:", parent_ids, "Child IDs:", child_ids, "Hop Count:", node.HopCount)
     
     #prepare show
-    if (graphics == 1):
-        # graphics for node
-        for node in ParameterConfig.nodes:
-            if node.HopCount == 1:
-                color = 'red'
-            elif node.HopCount == 2:
-                color = 'green'
-            elif node.HopCount == 3:
-                color = 'blue'
-            else:
-                color = 'gray'  # Default color for other hop counts
-            
-            ax.add_artist(plt.Circle((node.x, node.y), 40, fill=True, color=color))
-            ax.text(node.x + 5, node.y + 5, str(node.ID), fontsize=9, ha='left', va='bottom')  # Add node ID above the node
-            
-            if link_line:
-                # Draw dashed lines to parent nodes
-                for parent in node.ParentSet:
-                    ax.plot([node.x, parent.x], [node.y, parent.y], 'k--', linewidth=1)  # Dashed line to parent
-
-        # graphics for base station
-        ax.scatter(ParameterConfig.GW.x, ParameterConfig.GW.y,
-                   marker='^', color='red', s=100, zorder=10, label="Gateway")
-        ax.text(ParameterConfig.GW.x + 5, ParameterConfig.GW.y + 5, str(ParameterConfig.GW.ID), fontsize=9, ha='left', va='bottom')  # Add GW ID
-
-        plt.xlim([-radius, radius])
-        plt.ylim([-radius, radius])
-        plt.draw()
-        plt.pause(0.001)  # Add a short pause to allow the plot to update
-
-        plt.show(block=True)  # Keep the plot window open until it is closed by the user
-        
+    Mesh_Topology()   
+         
     ParameterConfig.Routing_Flag = 1
 
 

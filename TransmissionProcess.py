@@ -42,7 +42,7 @@ def transmit_JoinAsk(env,node):
                             if n in ParameterConfig.UnconnectedNodes: # if the node is not connected to the network
                                 ParameterConfig.UnconnectedNodes.remove(n)
                             if n not in ParameterConfig.JoinReqNodeSet: # 1st layer nodes don't need to send JoinReq packets
-                                    ParameterConfig.JoinReqNodeSet.append(n) # add the node to the JoinReqSet
+                                ParameterConfig.JoinReqNodeSet.append(n) # add the node to the JoinReqSet
                             if n not in ParameterConfig.JoinAskNodeSet:
                                 ParameterConfig.JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet
                         
@@ -68,8 +68,7 @@ def transmit_JoinAsk(env,node):
                                     ParameterConfig.JoinReqNodeSet.append(n) # add the node to the JoinReqSet
                                 if n not in ParameterConfig.JoinAskNodeSet:
                                     ParameterConfig.JoinAskNodeSet.append(n) # add the node to the JoinAskNodeSet
-                            
-                    
+                                 
             # take first packet rectime, stop for rectime        
             yield env.timeout(node.packet.rectime)
 
@@ -100,7 +99,7 @@ def transmit_JoinReq(env,node):
                 
             '''Check collisions for JoinReq packets.'''
             node.packet = packet # assign the packet to the node's packet
-            if (node in NodeInTransmission):
+            if (node in ParameterConfig.NodeInTransmission):
                 pass
                 # print ("ERROR: packet already in")
             else:
@@ -109,15 +108,15 @@ def transmit_JoinReq(env,node):
                     packet.collided = 1
                 else:
                     packet.collided = 0
-                NodeInTransmission.append(node)
+                ParameterConfig.NodeInTransmission.append(node)
                 packet.addTime = env.now
                     
             # take first packet rectime, stop for rectime        
             yield env.timeout(packet.rectime)
 
             # can remove the node for next transmission                  
-            if (node in NodeInTransmission):
-                NodeInTransmission.remove(node)
+            if (node in ParameterConfig.NodeInTransmission):
+                ParameterConfig.NodeInTransmission.remove(node)
 
 
 '''
@@ -142,7 +141,7 @@ def transmit_JoinConfirm(env,node):
                 continue   
                 
             '''Check collisions for JoinReq packets.'''
-            if (node in NodeInTransmission):
+            if (node in ParameterConfig.NodeInTransmission):
                 pass
                 # print ("ERROR: packet already in")
             else:
@@ -151,15 +150,15 @@ def transmit_JoinConfirm(env,node):
                     packet.collided = 1
                 else:
                     packet.collided = 0
-                NodeInTransmission.append(node)
+                ParameterConfig.NodeInTransmission.append(node)
                 packet.addTime = env.now
                     
             # take first packet rectime, stop for rectime        
             yield env.timeout(packet.rectime)
 
             # can remove the node for next transmission                  
-            if (node in NodeInTransmission):
-                NodeInTransmission.remove(node)
+            if (node in ParameterConfig.NodeInTransmission):
+                ParameterConfig.NodeInTransmission.remove(node)
 
 '''
     This function is used to transmit JoinReq packets for unconnected nodes.
@@ -227,7 +226,7 @@ def Unconnected_transmit_JoinConfirm(env,node):
                 continue   
                 
             '''Check collisions for JoinReq packets.'''
-            if (node in NodeInTransmission):
+            if (node in ParameterConfig.NodeInTransmission):
                 pass
                 # print ("ERROR: packet already in")
             else:
@@ -236,15 +235,15 @@ def Unconnected_transmit_JoinConfirm(env,node):
                     packet.collided = 1
                 else:
                     packet.collided = 0
-                NodeInTransmission.append(node)
+                ParameterConfig.NodeInTransmission.append(node)
                 packet.addTime = env.now
                     
             # take first packet rectime, stop for rectime        
             yield env.timeout(packet.rectime)
 
             # can remove the node for next transmission                  
-            if (node in NodeInTransmission):
-                NodeInTransmission.remove(node)
+            if (node in ParameterConfig.NodeInTransmission):
+                ParameterConfig.NodeInTransmission.remove(node)
     
 
 

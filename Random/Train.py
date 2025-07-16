@@ -4,29 +4,24 @@ from ParameterConfig import *
 import ParameterConfig
 from Node import *
 from Gateway import *
-from MAB.Agent import MABAgent
 from Plot.TopologyGraphics import Topology_Graphics
 import random
 
-def MAB_Run(nodes):
-    '''Initialize the MAB agent for each node'''
-    for node in nodes:
-        node.agent = MABAgent(ParentSet = node.ParentSet)
-    
+def Random_Run(nodes):
     # set_seed(random_seed)
-    for episode in range(MAB_Config.num_episode):
-        MAB_Train(nodes, episode)
+    for episode in range(Random_Config.num_episode):
+        Random_Train(nodes, episode)
 
-    # Training_Chart(MAB_Config)
-
-    # MAB_Eval(nodes)
+    # Training_Chart(Random_Config)
+    
+    # Random_Eval(nodes)
     
     Topology_Graphics(nodes)
 
-    # Result_Record(MAB_Config.NetPDR, MAB_Config.NetEnergyEfficiency)              
+    # Result_Record(Random_Config.NetPDR, Random_Config.NetEnergyEfficiency)              
 
 
-def MAB_Train(nodes, episode):
+def Random_Train(nodes, episode):
     
     # initialize simulation environment current time for each episode
     env = simpy.Environment()
@@ -43,7 +38,7 @@ def MAB_Train(nodes, episode):
         ''' Before simulation, initialize each node's transmission process '''
         env.process(transmit_multi_hop_packet(env,node))
 
-    env.run(until=MAB_Config.eposide_duration)
+    env.run(until=Random_Config.eposide_duration)
 
 
     for node in nodes:
@@ -52,15 +47,16 @@ def MAB_Train(nodes, episode):
     NetPDR = float(ParameterConfig.NumReceived/ParameterConfig.NumSent) 
     NetEnergyEfficiency = float(8*ParameterConfig.RecPacketSize / ParameterConfig.TotalEnergyConsumption)
 
-    MAB_Config.NetworkEnergyEfficiency.append(NetEnergyEfficiency)
-    MAB_Config.NetworkPDR.append(NetPDR)
+    Random_Config.NetworkEnergyEfficiency.append(NetEnergyEfficiency)
+    Random_Config.NetworkPDR.append(NetPDR)
 
     # print(f"episode={episode} | PDR={NetPDR*100:.2f} | Network EE={NetEnergyEfficiency:.2f}")
     print(f"episode={episode} | PDR={NetPDR*100:.2f} | EE = {NetEnergyEfficiency:.2f} | Number of packet sent = {ParameterConfig.NumSent} | "
           f"Number of packet received = {ParameterConfig.NumReceived} | "
           f"Number of path lost packet = {ParameterConfig.NumPathlost} | "
           f"Number of packet collided = {ParameterConfig.NumCollided}")
-        
+    
+            
 '''
 After the Ad-Hoc network is established, nodes start to transmit packets to the gateway.
 '''
@@ -71,9 +67,7 @@ def transmit_multi_hop_packet(env,node):
         # simulate the time interval of discrete events happened in a system
         yield env.timeout(random.expovariate(1.0/float(node.period)))
         
-        MAB_Generate_Multi_Hop_Packet(node)
-        
-        ParameterConfig.TotalEnergyConsumption += node.packet.tx_energy
+        Random_Generate_Multi_Hop_Packet(node)
         
         FormerSourceID = node.packet.SourceID
         SourceID = node.packet.SourceID
@@ -95,16 +89,7 @@ def transmit_multi_hop_packet(env,node):
             node.packet.Index = ParameterConfig.PacketIndex
         
         yield env.timeout(node.packet.rectime)
-        
-        '''Agent observe reward'''
-        if node.packet.lost == True or node.packet.collided == 1: 
-            node.agent.reward = 0
-        else: 
-            node.agent.reward = 1
-        
-        '''Weight update of the MAB agent'''
-        node.agent.Expected_Reward_Update()
-        
+       
         # complete packet has been received by base station
         # can remove it for next transmission                  
         if node.ID in ParameterConfig.NodeInTransmissionToNode[TargetID]:
@@ -117,10 +102,10 @@ def transmit_multi_hop_packet(env,node):
             if node.packet.collided == 0: # Relay node receive the packet
                 SourceID = TargetID
                 if TargetID != 0:
-                    TargetID = MAB_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
-                    
+                    TargetID = Random_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
+
                     ParameterConfig.TotalEnergyConsumption += Devices[SourceID].RelayPackets[FormerSourceID].tx_energy
-                
+                    
             else:
                 pass
         
@@ -141,15 +126,6 @@ def transmit_multi_hop_packet(env,node):
             
             yield env.timeout(node.packet.rectime)
             
-            '''Agent observe reward'''
-            if Devices[SourceID].RelayPackets[FormerSourceID].lost == True or Devices[SourceID].RelayPackets[FormerSourceID].collided == 1: 
-                Devices[SourceID].agent.reward = 0
-            else: 
-                Devices[SourceID].agent.reward = 1
-            
-            '''Weight update of the MAB agent'''
-            Devices[SourceID].agent.Expected_Reward_Update()
-            
             # complete packet has been received by base station
             # can remove it for next transmission                  
             if SourceID in ParameterConfig.NodeInTransmissionToNode[TargetID]:
@@ -163,10 +139,10 @@ def transmit_multi_hop_packet(env,node):
                     if TargetID != 0:
                         FormerSourceID = SourceID
                         SourceID = TargetID
-                        TargetID = MAB_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
-                        
+                        TargetID = Random_Generate_Relay_Packet(Devices[SourceID], FormerSourceID)
+                    
                         ParameterConfig.TotalEnergyConsumption += Devices[SourceID].RelayPackets[FormerSourceID].tx_energy
-                        
+                    
                     else:
                         SourceID = 0
                 else:
@@ -191,14 +167,13 @@ def transmit_multi_hop_packet(env,node):
             
         
 # node generate "virtul" packets for each gateway
-def MAB_Generate_Multi_Hop_Packet(node):
+def Random_Generate_Multi_Hop_Packet(node):
     node.packet = None
 
     '''Choose Target node and Transmission Power'''
-    # tp, TargetID = node.agent.actions_choose()
-    TargetID = node.agent.actions_choose()
+    TargetID = random.choice(list(node.ParentSet)).ID
     
-    dist = get_distance(node.x, node.y, Devices[TargetID]) # distance between node and gateway
+    node.dist = get_distance(node.x, node.y, Devices[TargetID]) # distance between node and gateway
     
     PacketPara = LoRaParameters()
     
@@ -208,16 +183,15 @@ def MAB_Generate_Multi_Hop_Packet(node):
     # PacketPara.cf = random.choice(Carrier_Frequency)
     # PacketPara.tp = tp 
     PacketPara.tp = 14
-    node.packet = DirectionalPacket(node.ID, TargetID, PacketPara, dist)
+    node.packet = DirectionalPacket(node.ID, TargetID, PacketPara, node.dist)
     # print('node %d' %id, "x", node.x, "y", node.y, "dist: ", node.dist, "my BS:", node.bs.id)
 
-def MAB_Generate_Relay_Packet(node, FormerNodeID):
+def Random_Generate_Relay_Packet(node, FormerNodeID):
     
     '''Choose Target node and Transmission Power'''
-    # tp, TargetID = node.agent.actions_choose()
-    TargetID = node.agent.actions_choose()
+    TargetID = random.choice(list(node.ParentSet)).ID
     
-    dist = get_distance(node.x,node.y,Devices[TargetID]) # distance between node and gateway
+    node.dist = get_distance(node.x,node.y,Devices[TargetID]) # distance between node and gateway
     
     PacketPara = LoRaParameters()
 
@@ -227,7 +201,7 @@ def MAB_Generate_Relay_Packet(node, FormerNodeID):
     # PacketPara.tp = tp
     PacketPara.tp = 14 
     
-    node.RelayPackets[FormerNodeID] = DirectionalPacket(node.ID, TargetID, PacketPara, dist)
+    node.RelayPackets[FormerNodeID] = DirectionalPacket(node.ID, TargetID, PacketPara, node.dist)
 
     return TargetID
 
@@ -258,6 +232,7 @@ def Training_Chart(Method_Config):
 
 
 def reset_simulation_stats():
+    """重置仿真统计量，确保每次动作测试独立"""
     ParameterConfig.NodeInTransmissionToNode = [[] for _ in range(len(Devices))]
     ParameterConfig.NumSent = 0
     ParameterConfig.NumReceived = 0
@@ -268,5 +243,4 @@ def reset_simulation_stats():
     ParameterConfig.RecPacketSize = 0 # size of received packets
     ParameterConfig.TotalEnergyConsumption = 0 # total energy consumption of the network
     ParameterConfig.TotalPacketAirtime  = 0 # total airtime of packets in the network
-
 

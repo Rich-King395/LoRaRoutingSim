@@ -4,19 +4,73 @@ from ParameterConfig import *
 import ParameterConfig
 from Node import *
 from Gateway import *
-from DLoRa.Agent import DLoRaAgent
+from DLoRa.Agent import *
+from Plot.TopologyGraphics import Topology_Graphics, Mesh_Topology
 import random
 
 def DLoRa_Run(nodes):
+    # generate BS
+    ParameterConfig.GW = myBS(0) # create a gateway with ID 0
+
+    Devices.append(ParameterConfig.GW) # add BS to the list of devices
+    
+    # generate node
+    id = 1
+    
+    # Set a random number generator for node IDs
+    random.seed(42)  # Initialize the random number generator
+    
+    while len(ParameterConfig.nodes) < nrNodes:
+        # myNode takes period (in ms), base station id packetlen (in Bytes)
+        # 1000000 = 16 min
+        x = random.randint(-radius, radius)
+        y = random.randint(-radius, radius)
+        # make sure the nodes are inside the circle
+        if (x ** 2 + y ** 2) > (radius ** 2):
+            continue
+
+        # create nrNodes for each base station
+        node = myNode(id,x,y,avgSendTime) # For different BS, same node has different id
+        
+        node.HopCount = 1
+        node.ParentSet = [ParameterConfig.GW]
+        
+        ParameterConfig.nodes.append(node)
+        ParameterConfig.UnconnectedNodes.append(node)
+        ParameterConfig.Devices.append(node) # add node to the list of devices
+        id += 1
+
+    '''Location recording'''
+    # store nodes and basestation locations
+    Location_Record = os.path.join(ParameterConfig.Project_Path, "Location_Record")
+    os.makedirs(Location_Record, exist_ok=True)  # Create Location_Record folder if it doesn't exist
+    
+    node_path = os.path.join(Location_Record, "node.txt")  # Save node file in Location_Record
+    with open(node_path, 'w') as nfile:
+        for node in ParameterConfig.nodes:
+            nfile.write('{x} {y} {ID}\n'.format(**vars(node)))
+
+    basestation_path = os.path.join(Location_Record, "gateway.txt")  # Save basestation file in Location_Record
+    with open(basestation_path, 'w') as bfile:
+        bfile.write('{x} {y} {ID}\n'.format(**vars(ParameterConfig.GW)))  # Use ParameterConfig.GW for basestation
+    
+    Mesh_Topology() 
+    
+    ParameterConfig.Routing_Flag = 1
+    
+    random.seed(13)
+    
     '''Initialize the DLoRa agent for each node'''
     for node in nodes:
-        node.agent = DLoRaAgent()
+        node.agent = UCB(DLoRa_Config.coef)
     
     # set_seed(random_seed)
     for episode in range(DLoRa_Config.num_episode):
         DLoRa_Train(nodes, episode)
 
     # Training_Chart(DLoRa_Config)
+    
+    Topology_Graphics(nodes)
 
     # DLoRa_Eval(nodes)
 
@@ -41,7 +95,6 @@ def DLoRa_Train(nodes, episode):
         env.process(transmit_single_hop_packet(env,node))
 
     env.run(until=DLoRa_Config.eposide_duration)
-
 
     for node in nodes:
         node.PDR = float((node.NumReceived)/(node.NumSent))
@@ -79,7 +132,7 @@ def transmit_single_hop_packet(env,node):
             pass
         else:
             # adding packet if no collision
-            if checkcollision(node.packet)==1:    
+            if checkcollision(node.packet) == 1:    
                 node.packet.collided = 1
             else:
                 node.packet.collided = 0
@@ -125,7 +178,7 @@ def DLoRa_Generate_Single_Hop_Packet(node):
     
     PacketPara = LoRaParameters()
     
-    PacketPara.sf, PacketPara.cf, PacketPara.tp = node.actions_choose()
+    PacketPara.sf, PacketPara.cf, PacketPara.tp = node.agent.actions_choose()
 
     node.packet = DirectionalPacket(node.ID, TargetID, PacketPara, node.dist)
     # print('node %d' %id, "x", node.x, "y", node.y, "dist: ", node.dist, "my BS:", node.bs.id)

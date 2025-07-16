@@ -32,6 +32,8 @@ sensi = np.array([sf7,sf8,sf9,sf10,sf11,sf12])
 # minimum SNR required for demodulation at different spreading factors
 SNR_Req = np.array([-7.5,-10,-12.5,-15,-17.5,-20])
 
+
+SF = np.array([7,8,9,10,11,12])
 Carrier_Frequency = np.array([867100000,867300000,867500000,867700000,
                        867900000,868100000,868300000,868500000])
 Transmission_Power = np.array([2,4,6,8,10,12,14])
@@ -47,14 +49,13 @@ nrNetworks = 1
 simtime = 3600000 * 24
 full_collision = 1
 
-# allocation_method = "random"
+# allocation_method = "Random"
 # allocation_method = "EXP3"
-# allocation_method = "MAB"           
+allocation_method = "MAB"           
+#allocation_method = "DLoRa"               
 
-allocation_method = "DLoRa"               
-
-# network_topology = "Mesh"
-network_topology = "Star"
+network_topology = "Mesh"
+#network_topology = "Star"
 
 AskJoinTime = 160000
 JoinReqTime = 160000
@@ -100,9 +101,9 @@ PacketIndex = 0
 
 Ptx = 14 # packet transmission power
 gamma = 2.32
-d0 = 1000.0
+d0 = 1000
 std = 7.8           
-Lpld0 = 128.95
+Lpld0 = 128.75
 GL = 0
 
 # prepare graphics and add sink
@@ -150,7 +151,7 @@ class MAB_Config:
     eposide_duration = 1600000  
     eval_duration = 12000000
 
-    num_episode = 1000
+    num_episode = 10
         
     NetworkEnergyEfficiency = []
     NetworkPDR = []
@@ -168,10 +169,13 @@ class DLoRa_Config:
     initialize_flag = 1
 
     initialize_duration = 12000000
-    eposide_duration = 1800000 
+    eposide_duration =  1600000
     eval_duration = 12000000
 
-    num_episode = 4000
+    num_episode = 10
+    
+    NetworkEnergyEfficiency = []
+    NetworkPDR = []
 
     NetPDR = 0
     NetThroughput = 0
@@ -179,4 +183,18 @@ class DLoRa_Config:
 
     result_folder_path = f"D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim\DLoRa\Results"
 
+class Random_Config:
+    eposide_duration = 1600000  
+    eval_duration = 12000000
+
+    num_episode = 10
         
+    NetworkEnergyEfficiency = []
+    NetworkPDR = []
+
+    NetPDR = 0
+    NetThroughput = 0
+    NetEnergyEfficiency = 0
+
+    result_folder_path = f"D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim\Random\Results"
+            

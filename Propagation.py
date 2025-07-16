@@ -11,8 +11,8 @@ def checkcollision(packet):
     # lost packets don't collide
     if packet.lost: 
        return 0
-    if NodeInTransmission:
-        for other in NodeInTransmission:
+    if ParameterConfig.NodeInTransmission:
+        for other in ParameterConfig.NodeInTransmission:
             if other.ID != packet.SourceID: # nodes that donnot send this packet
                if frequencyCollision(packet, other.packet) \
                    and sfCollision(packet, other.packet):
@@ -126,7 +126,7 @@ def timingCollision(p1, p2):
 def rssi(packet,distance):
     if ParameterConfig.Routing_Flag == 0:
         Lpl = Lpld0+10*gamma*math.log10(distance/d0)
-    else:
+    else:    
         Lpl = Lpld0+10*gamma*math.log10(distance/d0) + np.random.normal(0,std)
 
     Prx = packet.tp + GL - Lpl
