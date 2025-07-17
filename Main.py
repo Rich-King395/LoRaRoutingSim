@@ -2,7 +2,7 @@ import sys
 from ParameterConfig import *
 from AdHocNetwork import Establishment
 from EXP3.Train import EXP3_Run
-from MAB.Train import MAB_Run
+from DLoRaMesh.Train import DLoRaMesh_Run
 from DLoRa.Train import DLoRa_Run
 from Random.Train import Random_Run
 
@@ -37,8 +37,8 @@ if __name__ == "__main__":
             set_seed(13)
             if allocation_method == "EXP3":
                 EXP3_Run(nodes)
-            elif allocation_method == "MAB":
-                MAB_Run(nodes)
+            elif allocation_method == "DLoRaMesh":
+                DLoRaMesh_Run(nodes)
             elif allocation_method == "Random":
                 Random_Run(nodes)
         elif network_topology == "Star":

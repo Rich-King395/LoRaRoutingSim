@@ -42,9 +42,9 @@ TP_SUM = 2 + 4 + 6 + 8 + 10 + 12 + 14
 SF_SUM = float(7/(2^7)+8/(2^8)+9/(2^9)+10/(2^10)+11/(2^11)+12/(2^12))
 
 # adaptable LoRaWAN parameters to users
-nrNodes = 100
+nrNodes = 30
 radius = 5000
-PayloadSize = 20
+PayloadSize = 50
 avgSendTime = 4000
 nrNetworks = 1
 simtime = 3600000 * 24
@@ -52,6 +52,7 @@ full_collision = 1
 
 # allocation_method = "Random"
 # allocation_method = "EXP3"
+
 allocation_method = "DLoRaMesh"           
 
 # allocation_method = "DLoRa"               
@@ -64,6 +65,7 @@ JoinReqTime = 160000
 JoinConfirmTime = 160000
 
 Routing_Flag = 0
+Eval_Flag = 0
 
 # global stuff
 GW = None # global variable for the gateway
@@ -152,8 +154,12 @@ class EXP3_Config:
 class DLoRaMesh_Config:
     eposide_duration = 1600000  
     eval_duration = 12000000
+    
+    eval_eposide = 0
+    
+    coef = 2
 
-    num_episode = 10
+    num_episode = 500
         
     NetworkEnergyEfficiency = []
     NetworkPDR = []
@@ -162,7 +168,7 @@ class DLoRaMesh_Config:
     NetThroughput = 0
     NetEnergyEfficiency = 0
 
-    result_folder_path = f"D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim\MAB\Results"
+    result_folder_path = f"D:\Files\IoT\LoRa\LoRa Simulator\LoRaRoutingSim\DLoRaMesh"
 
 class DLoRa_Config:
     DLoRa_Variant = 2 # 0: epsilon-greedy, 1: decaying-greedy, 2: UCB
@@ -170,11 +176,13 @@ class DLoRa_Config:
     coef = 2 # coefficient of UCB
     initialize_flag = 1
 
+    eval_eposide = 0
+
     initialize_duration = 12000000
     eposide_duration =  1600000
     eval_duration = 12000000
 
-    num_episode = 10
+    num_episode = 1000
     
     NetworkEnergyEfficiency = []
     NetworkPDR = []

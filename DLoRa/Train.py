@@ -1,5 +1,6 @@
 import os
 import matplotlib.pyplot as plt
+from tensorboardX import SummaryWriter
 from ParameterConfig import *
 import ParameterConfig
 from Node import *
@@ -70,11 +71,63 @@ def DLoRa_Run(nodes):
 
     # Training_Chart(DLoRa_Config)
     
-    Topology_Graphics(nodes)
+    # Topology_Graphics(nodes)
 
-    # DLoRa_Eval(nodes)
+    DLoRa_Eval(nodes)
 
     # Result_Record(DLoRa_Config.NetPDR, DLoRa_Config.NetEnergyEfficiency)              
+
+def DLoRa_Eval(nodes):
+    ParameterConfig.Eval_Flag = 1
+    
+    sorted_nodes = sorted(nodes, key=lambda node: node.DisttoGW)
+    
+    for index, node in enumerate(sorted_nodes):
+        node.DistID = index
+    
+    print("Start evaluation of DLoRa")
+    
+    writer = SummaryWriter(log_dir='./logs/DLoRa_run')
+    
+    while True:
+        min_capacity = min(node.BatteryCapacity for node in nodes)
+        
+        for index, node in enumerate(sorted_nodes):
+            writer.add_scalar(f'Battery/Node{node.DistID}/Distance{node.DisttoGW:.1f}m', node.BatteryCapacity, DLoRa_Config.eval_eposide)
+        
+        writer.add_scalar('Network/Min_Battery_Capacity', min_capacity, DLoRa_Config.eval_eposide)
+        
+        if min_capacity <= 0:
+            Surival_Time = DLoRa_Config.eval_eposide * DLoRa_Config.eposide_duration / 1000
+            print("Network survial time is",Surival_Time,"s" )
+            break  
+            
+        DLoRa_Config.eval_eposide += 1
+        
+        # initialize simulation environment current time for each episode
+        env = simpy.Environment()
+
+        ''' initialize the environment at the beginning of episode '''
+        reset_simulation_stats()
+        
+        ''' Initialize the data of nodes and their transmission processes for each episode '''
+        for node in nodes:
+            node.NumSent = 0
+            node.NumLost = 0
+            node.NumReceived = 0
+
+            ''' Before simulation, initialize each node's transmission process '''
+            env.process(transmit_single_hop_packet(env,node))
+
+        env.run(until=DLoRa_Config.eposide_duration)
+
+        for node in nodes:
+            node.PDR = float((node.NumReceived)/(node.NumSent))
+
+        NetPDR = float(ParameterConfig.NumReceived/ParameterConfig.NumSent) 
+        NetEnergyEfficiency = float(8*ParameterConfig.RecPacketSize / ParameterConfig.TotalEnergyConsumption)
+
+    writer.close()
 
 
 def DLoRa_Train(nodes, episode):
@@ -181,6 +234,9 @@ def DLoRa_Generate_Single_Hop_Packet(node):
     PacketPara.sf, PacketPara.cf, PacketPara.tp = node.agent.actions_choose()
 
     node.packet = DirectionalPacket(node.ID, TargetID, PacketPara, node.dist)
+    
+    if ParameterConfig.Eval_Flag == 1:
+        node.BatteryCapacity -= node.packet.tx_energy*0.001
     # print('node %d' %id, "x", node.x, "y", node.y, "dist: ", node.dist, "my BS:", node.bs.id)
 
 

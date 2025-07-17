@@ -39,7 +39,7 @@ class DLoRaAgent:
         raise NotImplementedError
     
     def Expected_Reward_Update(self):
-        self.rewards[0] = self.rewards[0] + float((self.SF_arms[self.SF_index]/(2^self.SF_arms[self.SF_index]))/SF_SUM)
+        self.rewards[0] = self.rewards[0] + 5*float((self.SF_arms[self.SF_index]/(2^self.SF_arms[self.SF_index]))/SF_SUM)
         self.Q_SF[self.SF_index] += (self.rewards[0] - self.Q_SF[self.SF_index]) / (self.counts_SF[self.SF_index] + 1)
         
         self.Q_Parent[self.Parent_index] += (self.rewards[1] - self.Q_Parent[self.Parent_index]) / (self.counts_Parent[self.Parent_index] + 1)
@@ -49,10 +49,10 @@ class DLoRaAgent:
 
 """ UCB(Upper Confidence Boundary) algorithm, inherit from DLoRa"""
 class UCB(DLoRaAgent):
-    def __init__(self,coef):
-        super(UCB, self).__init__()
+    def __init__(self, ParentSet):
+        super(UCB, self).__init__(ParentSet)
         self.total_count = 0
-        self.coef = coef
+        self.coef = DLoRaMesh_Config.coef
 
     def actions_choose(self):
         self.total_count += 1
@@ -61,7 +61,7 @@ class UCB(DLoRaAgent):
             np.log(self.total_count) / (2 * (self.counts_SF + 1)))  # calculate ucb of sf
         k_sf = np.argmax(ucb_sf)
         self.counts_SF[k_sf] += 1
-        '''Carrier parentquency choose'''
+        '''relay choose'''
         ucb_parent = self.Q_Parent + self.coef * np.sqrt(
             np.log(self.total_count) / (2 * (self.counts_Parent + 1)))  # calculate ucb of parent
         k_parent = np.argmax(ucb_parent)

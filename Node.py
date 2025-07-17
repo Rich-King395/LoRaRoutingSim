@@ -21,6 +21,8 @@ class myNode:
         self.x = x
         self.y = y
         self.DisttoGW = math.sqrt(x**2 + y**2)  # distance from the gateway
+        self.DistID = None
+        self.BatteryCapacity = 1500  # initial battery capacity
         self.ChildSet = [] # list of child nodes
         self.ParentSet = [] # list of parent nodes
         self.ParentFreSet = {} # dictionary to store frequencies corresponding to each ParentNode
