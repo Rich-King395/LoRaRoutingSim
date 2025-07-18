@@ -5,6 +5,7 @@ from EXP3.Train import EXP3_Run
 from DLoRaMesh.Train import DLoRaMesh_Run
 from DLoRa.Train import DLoRa_Run
 from Random.Train import Random_Run
+from NaiveMABMesh.Train import NaiveMABMesh_Run
 
 from random import seed as set_seed
 
@@ -41,6 +42,8 @@ if __name__ == "__main__":
                 DLoRaMesh_Run(nodes)
             elif allocation_method == "Random":
                 Random_Run(nodes)
+            elif allocation_method == "NaiveMABMesh":
+                NaiveMABMesh_Run(nodes)
         elif network_topology == "Star":
             if allocation_method == "DLoRa":
                 DLoRa_Run(nodes)

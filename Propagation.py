@@ -127,7 +127,8 @@ def rssi(packet,distance):
     if ParameterConfig.Routing_Flag == 0:
         Lpl = Lpld0+10*gamma*math.log10(distance/d0)
     else:    
-        Lpl = Lpld0+10*gamma*math.log10(distance/d0) + np.random.normal(0,std)
+        # Lpl = Lpld0+10*gamma*math.log10(distance/d0) + np.random.normal(0,std)
+        Lpl = Lpld0+10*gamma*math.log10(distance/d0) + np.random.normal(0,1)
 
     Prx = packet.tp + GL - Lpl
     return Prx

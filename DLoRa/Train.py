@@ -7,7 +7,10 @@ from Node import *
 from Gateway import *
 from DLoRa.Agent import *
 from Plot.TopologyGraphics import Topology_Graphics, Mesh_Topology
+from Plot.Plot import sf_distribution, tp_distribution
 import random
+
+writer = SummaryWriter(log_dir='./logs/DLoRa_run')
 
 def DLoRa_Run(nodes):
     # generate BS
@@ -66,16 +69,52 @@ def DLoRa_Run(nodes):
         node.agent = UCB(DLoRa_Config.coef)
     
     # set_seed(random_seed)
-    for episode in range(DLoRa_Config.num_episode):
-        DLoRa_Train(nodes, episode)
+    DLoRa_Train(nodes)
 
     # Training_Chart(DLoRa_Config)
-    
-    # Topology_Graphics(nodes)
 
     DLoRa_Eval(nodes)
 
+    Topology_Graphics(nodes)
+    
     # Result_Record(DLoRa_Config.NetPDR, DLoRa_Config.NetEnergyEfficiency)              
+
+def DLoRa_Train(nodes):
+    for episode in range(DLoRa_Config.num_episode):
+        # initialize simulation environment current time for each episode
+        env = simpy.Environment()
+
+        ''' initialize the environment at the beginning of episode '''
+        reset_simulation_stats()
+        
+        ''' Initialize the data of nodes and their transmission processes for each episode '''
+        for node in nodes:
+            node.NumSent = 0
+            node.NumLost = 0
+            node.NumReceived = 0
+
+            ''' Before simulation, initialize each node's transmission process '''
+            env.process(transmit_single_hop_packet(env,node))
+
+        env.run(until=DLoRa_Config.eposide_duration)
+
+        for node in nodes:
+            node.PDR = float((node.NumReceived)/(node.NumSent))
+
+        NetPDR = float(ParameterConfig.NumReceived/ParameterConfig.NumSent) 
+        NetEnergyEfficiency = float(8*ParameterConfig.RecPacketSize / ParameterConfig.TotalEnergyConsumption)
+
+        # DLoRa_Config.NetworkEnergyEfficiency.append(NetEnergyEfficiency)
+        DLoRa_Config.NetworkPDR.append(NetPDR)
+
+        # print(f"episode={episode} | PDR={NetPDR*100:.2f} | Network EE={NetEnergyEfficiency:.2f}")
+        print(f"episode={episode} | PDR={NetPDR*100:.2f} | EE = {NetEnergyEfficiency:.2f} | Number of packet sent = {ParameterConfig.NumSent} | "
+            f"Number of packet received = {ParameterConfig.NumReceived} | "
+            f"Number of path lost packet = {ParameterConfig.NumPathlost} | "
+            f"Number of packet collided = {ParameterConfig.NumCollided}")
+        
+        writer.add_scalar('DLoRa/Training_PDR', NetPDR, episode)
+        writer.add_scalar('DLoRa/Training_EE', NetEnergyEfficiency, episode)
 
 def DLoRa_Eval(nodes):
     ParameterConfig.Eval_Flag = 1
@@ -87,15 +126,13 @@ def DLoRa_Eval(nodes):
     
     print("Start evaluation of DLoRa")
     
-    writer = SummaryWriter(log_dir='./logs/DLoRa_run')
-    
     while True:
         min_capacity = min(node.BatteryCapacity for node in nodes)
         
         for index, node in enumerate(sorted_nodes):
             writer.add_scalar(f'Battery/Node{node.DistID}/Distance{node.DisttoGW:.1f}m', node.BatteryCapacity, DLoRa_Config.eval_eposide)
         
-        writer.add_scalar('Network/Min_Battery_Capacity', min_capacity, DLoRa_Config.eval_eposide)
+        writer.add_scalar('DLoRa/Min_Battery_Capacity', min_capacity, DLoRa_Config.eval_eposide)
         
         if min_capacity <= 0:
             Surival_Time = DLoRa_Config.eval_eposide * DLoRa_Config.eposide_duration / 1000
@@ -128,41 +165,10 @@ def DLoRa_Eval(nodes):
         NetEnergyEfficiency = float(8*ParameterConfig.RecPacketSize / ParameterConfig.TotalEnergyConsumption)
 
     writer.close()
-
-
-def DLoRa_Train(nodes, episode):
     
-    # initialize simulation environment current time for each episode
-    env = simpy.Environment()
+    sf_distribution(DLoRa_Config.result_folder_path)
+    tp_distribution(DLoRa_Config.result_folder_path)
 
-    ''' initialize the environment at the beginning of episode '''
-    reset_simulation_stats()
-    
-    ''' Initialize the data of nodes and their transmission processes for each episode '''
-    for node in nodes:
-        node.NumSent = 0
-        node.NumLost = 0
-        node.NumReceived = 0
-
-        ''' Before simulation, initialize each node's transmission process '''
-        env.process(transmit_single_hop_packet(env,node))
-
-    env.run(until=DLoRa_Config.eposide_duration)
-
-    for node in nodes:
-        node.PDR = float((node.NumReceived)/(node.NumSent))
-
-    NetPDR = float(ParameterConfig.NumReceived/ParameterConfig.NumSent) 
-    NetEnergyEfficiency = float(8*ParameterConfig.RecPacketSize / ParameterConfig.TotalEnergyConsumption)
-
-    # DLoRa_Config.NetworkEnergyEfficiency.append(NetEnergyEfficiency)
-    DLoRa_Config.NetworkPDR.append(NetPDR)
-
-    # print(f"episode={episode} | PDR={NetPDR*100:.2f} | Network EE={NetEnergyEfficiency:.2f}")
-    print(f"episode={episode} | PDR={NetPDR*100:.2f} | EE = {NetEnergyEfficiency:.2f} | Number of packet sent = {ParameterConfig.NumSent} | "
-          f"Number of packet received = {ParameterConfig.NumReceived} | "
-          f"Number of path lost packet = {ParameterConfig.NumPathlost} | "
-          f"Number of packet collided = {ParameterConfig.NumCollided}")
         
 '''
 After the Ad-Hoc network is established, nodes start to transmit packets to the gateway.
